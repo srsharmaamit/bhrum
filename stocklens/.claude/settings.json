@@ -1,0 +1,78 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run build)",
+      "Bash(npm test)",
+      "Bash(npm run test:*)",
+      "Bash(npm run dev)",
+      "Bash(npm run lint)",
+      "Bash(npm install)",
+      "Bash(npm install --save-dev *)",
+      "Bash(git status)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git add stocklens/*)",
+      "Bash(git commit*)",
+      "Bash(git push*)",
+      "Bash(git checkout*)",
+      "Bash(git branch*)",
+      "Bash(node -e *)",
+      "Bash(cat stocklens/src/**)",
+      "Bash(ls *)"
+    ],
+    "deny": [
+      "Bash(curl * financialmodelingprep.com*)",
+      "Bash(npm publish)",
+      "Bash(git push --force*)",
+      "Bash(git reset --hard*)",
+      "Bash(rm -rf *)",
+      "Bash(echo * FMP_API_KEY*)"
+    ]
+  },
+  "env": {
+    "NODE_ENV": "test"
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '[StockLens] Editing file — remember: FMP_API_KEY must stay server-side only. Scoring weights in config.ts must sum to 1.0'"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit(src/lib/scoring/*)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /home/user/bhrum/stocklens && npm run test:unit -- --silent 2>&1 | tail -3"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit(src/app/api/*)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /home/user/bhrum/stocklens && npm run test:integration -- --silent 2>&1 | tail -3"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /home/user/bhrum/stocklens && npm run build --silent 2>&1 | grep -E 'error|warning|✓' | tail -5"
+          }
+        ]
+      }
+    ]
+  }
+}
