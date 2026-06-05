@@ -13,6 +13,18 @@ import { cacheGet, cacheSet } from './cache';
 const BASE = 'https://financialmodelingprep.com/api/v3';
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
+// Tracks why the last FMP call failed — read by route handlers for better error messages.
+// Module-level state is fine: each serverless invocation is isolated.
+let _lastFmpError: 'invalid_key' | 'quota' | 'network' | null = null;
+
+export function getLastFmpError(): typeof _lastFmpError {
+  return _lastFmpError;
+}
+
+export function clearLastFmpError(): void {
+  _lastFmpError = null;
+}
+
 function apiKey(): string {
   const key = process.env.FMP_API_KEY;
   if (!key) throw new Error('FMP_API_KEY environment variable is not set');
@@ -38,17 +50,30 @@ async function fetchFMP<T>(
       cache: 'no-store', // bypass Next.js fetch cache; we manage our own
     });
 
-    if (!res.ok) return null;
+    if (!res.ok) {
+      _lastFmpError = 'network';
+      return null;
+    }
 
     const data = await res.json() as T;
 
     // FMP returns [] or {"Error Message": "..."} on bad ticker / quota exceeded
     if (Array.isArray(data) && data.length === 0) return null;
-    if (data && typeof data === 'object' && 'Error Message' in (data as object)) return null;
+    if (data && typeof data === 'object' && 'Error Message' in (data as object)) {
+      const msg = ((data as Record<string, string>)['Error Message'] ?? '').toLowerCase();
+      if (msg.includes('limit') || msg.includes('quota') || msg.includes('exceeded')) {
+        _lastFmpError = 'quota';
+      } else {
+        // "Invalid API KEY", "Special Endpoints", etc.
+        _lastFmpError = 'invalid_key';
+      }
+      return null;
+    }
 
     cacheSet<T>(cacheKey, data, CACHE_TTL);
     return data;
   } catch {
+    _lastFmpError = 'network';
     return null;
   }
 }
