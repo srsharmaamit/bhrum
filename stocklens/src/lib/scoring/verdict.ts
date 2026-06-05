@@ -37,7 +37,6 @@ function getVerdictBand(score: number, regime: StockRegime): string {
 // ── Top driver sentences ──────────────────────────────────────────────────────
 
 function getTopDrivers(metrics: MetricScore[]): string[] {
-  // Sort by contribution gap: how far is each metric from its max contribution?
   const sorted = [...metrics].sort(
     (a, b) => (b.weight * 100 - b.contribution) - (a.weight * 100 - a.contribution)
   );
@@ -45,13 +44,7 @@ function getTopDrivers(metrics: MetricScore[]): string[] {
   const drivers: string[] = [];
 
   for (const m of sorted.slice(0, 3)) {
-    if (m.flag === 'danger' || m.flag === 'warning') {
-      drivers.push(`${m.name}: ${m.detail}`);
-    } else if (m.flag === 'good') {
-      drivers.push(`${m.name}: ${m.detail}`);
-    } else {
-      drivers.push(`${m.name}: ${m.detail}`);
-    }
+    drivers.push(`${m.name}: ${m.detail}`);
     if (drivers.length >= 3) break;
   }
 
@@ -76,7 +69,6 @@ function getWatchConditions(
   const volume = quote.volume ?? 0;
   const avgVol = quote.avgVolume ?? 0;
   const eps = quote.eps;
-  const marketCap = quote.marketCap ?? profile.mktCap;
   const sharesOut = quote.sharesOutstanding;
   const beta = profile.beta;
 
