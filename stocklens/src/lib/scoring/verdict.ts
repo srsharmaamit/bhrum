@@ -18,6 +18,8 @@ function fmtPrice(n: number): string {
   return n < 10 ? `$${n.toFixed(4)}` : `$${n.toFixed(2)}`;
 }
 
+// ── Verdict band ──────────────────────────────────────────────────────────────
+
 function getVerdictBand(score: number, regime: StockRegime): string {
   if (regime === 'penny') {
     if (score >= 65) return 'Speculative — Manageable Risk';
@@ -32,7 +34,10 @@ function getVerdictBand(score: number, regime: StockRegime): string {
   return 'Extreme Caution — Avoid';
 }
 
+// ── Top driver sentences ──────────────────────────────────────────────────────
+
 function getTopDrivers(metrics: MetricScore[]): string[] {
+  // Sort by contribution gap: how far is each metric from its max contribution?
   const sorted = [...metrics].sort(
     (a, b) => (b.weight * 100 - b.contribution) - (a.weight * 100 - a.contribution)
   );
@@ -40,12 +45,20 @@ function getTopDrivers(metrics: MetricScore[]): string[] {
   const drivers: string[] = [];
 
   for (const m of sorted.slice(0, 3)) {
-    drivers.push(`${m.name}: ${m.detail}`);
+    if (m.flag === 'danger' || m.flag === 'warning') {
+      drivers.push(`${m.name}: ${m.detail}`);
+    } else if (m.flag === 'good') {
+      drivers.push(`${m.name}: ${m.detail}`);
+    } else {
+      drivers.push(`${m.name}: ${m.detail}`);
+    }
     if (drivers.length >= 3) break;
   }
 
   return drivers.slice(0, 3);
 }
+
+// ── Watch conditions from live numbers ───────────────────────────────────────
 
 function getWatchConditions(
   score: number,
@@ -67,6 +80,7 @@ function getWatchConditions(
   const sharesOut = quote.sharesOutstanding;
   const beta = profile.beta;
 
+  // ATR / spread proxy
   const atrPct = price > 0 ? (((quote.dayHigh ?? price) - (quote.dayLow ?? price)) / price) * 100 : 0;
   if (atrPct > 5) {
     conditions.push(
@@ -74,6 +88,7 @@ function getWatchConditions(
     );
   }
 
+  // Low float warning
   if (sharesOut !== null && sharesOut !== undefined && sharesOut < 20_000_000) {
     const floatM = (sharesOut / 1e6).toFixed(1);
     conditions.push(
@@ -81,6 +96,7 @@ function getWatchConditions(
     );
   }
 
+  // Price vs 50-day MA
   if (ma50 && price > 0) {
     const devPct = ((price - ma50) / ma50) * 100;
     if (devPct > 15) {
@@ -94,6 +110,7 @@ function getWatchConditions(
     }
   }
 
+  // Price vs 200-day MA
   if (ma200 && price > 0) {
     const devPct = ((price - ma200) / ma200) * 100;
     if (devPct < -10) {
@@ -103,6 +120,7 @@ function getWatchConditions(
     }
   }
 
+  // 52-week extremes
   if (yearHigh && price > 0) {
     const offHigh = ((yearHigh - price) / yearHigh) * 100;
     if (offHigh < 5) {
@@ -120,6 +138,7 @@ function getWatchConditions(
     }
   }
 
+  // Volume / liquidity
   if (avgVol > 0) {
     const relVol = volume / avgVol;
     if (relVol < 0.4) {
@@ -129,6 +148,7 @@ function getWatchConditions(
     }
   }
 
+  // Penny regime specific
   if (regime === 'penny') {
     if (eps === null) {
       conditions.push(
@@ -148,12 +168,14 @@ function getWatchConditions(
     }
   }
 
+  // Beta
   if (beta !== null && beta !== undefined && beta > 2.5) {
     conditions.push(
       `Beta ${fmt(beta, 1)} — this stock moves ${fmt(beta, 1)}× the market. Size positions accordingly to manage overnight risk.`
     );
   }
 
+  // High score — positive conditions
   if (score >= 70 && conditions.length === 0) {
     conditions.push(
       'Fundamentals and technicals are broadly aligned. Maintain standard position sizing and monitor for any macro deterioration.'
@@ -168,6 +190,8 @@ function computeMA(history: FMPHistoricalPrice[], days: number): number | null {
   const slice = history.slice(0, days);
   return slice.reduce((s, p) => s + p.close, 0) / days;
 }
+
+// ── Public API ────────────────────────────────────────────────────────────────
 
 export function buildVerdict(
   partialResult: Omit<ScoringResult, 'verdictBand' | 'verdictWhy' | 'verdictWatch'>,

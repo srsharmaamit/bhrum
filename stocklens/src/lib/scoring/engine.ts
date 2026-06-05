@@ -19,6 +19,8 @@ import {
   COMPLETENESS_FIELDS,
 } from './config';
 
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
 function clamp(n: number, min = 0, max = 100): number {
   return Math.max(min, Math.min(max, n));
 }
@@ -36,6 +38,8 @@ function movingAverage(history: FMPHistoricalPrice[], days: number): number | nu
   return slice.reduce((s, p) => s + p.close, 0) / days;
 }
 
+// ── Regime detection ─────────────────────────────────────────────────────────
+
 export function detectRegime(
   price: number | null,
   marketCap: number | null
@@ -47,6 +51,8 @@ export function detectRegime(
   if (marketCap >= REGIME.smallCapMaxMktCap) return 'mid-cap';
   return 'small-cap';
 }
+
+// ── Individual metric scorers ─────────────────────────────────────────────────
 
 function scoreLiquidity(
   quote: Partial<FMPQuote>,
@@ -68,6 +74,7 @@ function scoreLiquidity(
   else if (dollarVol >= thresholds.dollarVolPoor)  dollarVolScore = 25;
   else dollarVolScore = regime === 'penny' ? 5 : 10;
 
+  // Relative volume modifier (±15 pts)
   let relVolMod = 0;
   if (relVol >= LIQUIDITY.relVol.high) relVolMod = 15;
   else if (relVol >= LIQUIDITY.relVol.normal) relVolMod = 0;
@@ -108,7 +115,7 @@ function scoreVolatility(
   const dayLow = quote.dayLow ?? price;
   const yearHigh = quote.yearHigh ?? price;
   const yearLow = quote.yearLow ?? price;
-  const beta = profile.beta ?? quote.pe ?? null;
+  const beta = profile.beta ?? quote.pe ?? null; // fallback
 
   const atrPct = price > 0 ? ((dayHigh - dayLow) / price) * 100 : 0;
   const thresholds = regime === 'penny' ? VOLATILITY.penny : VOLATILITY.normal;
@@ -119,7 +126,8 @@ function scoreVolatility(
   else if (atrPct <= thresholds.atrHigh)  atrScore = 35;
   else atrScore = 10;
 
-  let betaScore = 60;
+  // Beta component
+  let betaScore = 60; // neutral when missing
   if (beta !== null && beta !== undefined) {
     if (Math.abs(beta) <= VOLATILITY.beta.low)   betaScore = 100;
     else if (Math.abs(beta) <= VOLATILITY.beta.medium) betaScore = 75;
@@ -127,12 +135,14 @@ function scoreVolatility(
     else betaScore = 20;
   }
 
+  // 52-week position: penalise stocks near their 52-week high (overbought risk)
+  // or at their absolute low (distressed risk). Mid-range is safest.
   let posScore = 60;
   if (yearHigh > yearLow && price > 0) {
-    const pos = (price - yearLow) / (yearHigh - yearLow);
-    if (pos >= 0.35 && pos <= 0.75) posScore = 80;
-    else if (pos > 0.9) posScore = 40;
-    else if (pos < 0.15) posScore = 30;
+    const pos = (price - yearLow) / (yearHigh - yearLow); // 0–1
+    if (pos >= 0.35 && pos <= 0.75) posScore = 80;        // healthy middle
+    else if (pos > 0.9) posScore = 40;                     // near 52-wk high
+    else if (pos < 0.15) posScore = 30;                    // near 52-wk low
     else posScore = 60;
   }
 
@@ -165,9 +175,10 @@ function scoreFloatSize(
   const marketCap = quote.marketCap ?? profile.mktCap ?? null;
   const sharesOut = quote.sharesOutstanding ?? null;
 
+  // Market cap score
   let mktCapScore: number;
   if (!marketCap) {
-    mktCapScore = 30;
+    mktCapScore = 30; // unknown = penalise
   } else if (marketCap >= FLOAT_SIZE.marketCap.largeCap)  mktCapScore = 100;
   else if (marketCap >= FLOAT_SIZE.marketCap.midCap)  mktCapScore = 85;
   else if (marketCap >= FLOAT_SIZE.marketCap.smallCap)  mktCapScore = 65;
@@ -175,10 +186,13 @@ function scoreFloatSize(
   else if (marketCap >= FLOAT_SIZE.marketCap.nanoCap)  mktCapScore = 25;
   else mktCapScore = 10;
 
+  // Float / dilution penalty
   let floatPenalty = 0;
   if (sharesOut !== null && sharesOut < FLOAT_SIZE.floatDangerShares) {
+    // Very low float → extreme volatility risk
     floatPenalty = 25;
   }
+  // Penny regime: penalty for ballooning share count
   if (regime === 'penny' && sharesOut !== null && sharesOut > FLOAT_SIZE.dilutionWarningShares) {
     floatPenalty = Math.max(floatPenalty, 20);
   }
@@ -216,13 +230,14 @@ function scoreQuality(
   ratios: Partial<FMPRatiosTTM> | null,
   regime: StockRegime
 ): MetricScore {
-  let score = 55;
+  let score = 55; // neutral baseline
   const notes: string[] = [];
 
   const eps = quote.eps ?? null;
   const pe  = quote.pe ?? ratios?.peRatioTTM ?? null;
   const price = quote.price ?? 0;
 
+  // EPS contribution
   if (eps === null) {
     const penalty = regime === 'penny' ? QUALITY.noEpsPenaltyPenny : 15;
     score -= penalty;
@@ -235,6 +250,7 @@ function scoreQuality(
     notes.push(`EPS -$${Math.abs(eps).toFixed(2)} (loss-making).`);
   }
 
+  // P/E sanity check (only meaningful for non-penny regime)
   if (regime !== 'penny' && pe !== null && pe > 0) {
     if (pe >= QUALITY.peSaneLow && pe <= QUALITY.peSaneHigh) {
       score += 10;
@@ -251,17 +267,20 @@ function scoreQuality(
     notes.push('Negative P/E — company not yet profitable.');
   }
 
+  // Penny regime: missing fundamentals are a risk signal
   if (regime === 'penny') {
     const hasFundamentals = eps !== null || pe !== null;
     if (!hasFundamentals) {
       notes.push('No fundamental data — treat as speculative.');
     }
+    // Extremely low price without earnings = typical pump-and-dump risk
     if (price < 0.5 && eps === null) {
       score -= 10;
       notes.push('Sub-$0.50 with no earnings — extreme caution.');
     }
   }
 
+  // TTM ratios bonus/penalty
   if (ratios?.netProfitMarginTTM != null) {
     if (ratios.netProfitMarginTTM > 0.1) score += 5;
     else if (ratios.netProfitMarginTTM < 0) score -= 5;
@@ -288,12 +307,14 @@ function scoreValuation(
   const price = quote.price ?? 0;
   const changesPct = quote.changesPercentage ?? 0;
 
+  // Prefer FMP-provided MAs; fall back to computing from history
   let ma50: number | null = quote.priceAvg50 ?? movingAverage(history, 50);
   let ma200: number | null = quote.priceAvg200 ?? movingAverage(history, 200);
 
   let score = 55;
   const notes: string[] = [];
 
+  // Price vs 50-day MA
   if (ma50 !== null && price > 0) {
     const devPct = ((price - ma50) / ma50) * 100;
     if (Math.abs(devPct) <= VALUATION.ma50DevPct) {
@@ -309,10 +330,11 @@ function scoreValuation(
     }
   }
 
+  // Price vs 200-day MA (trend direction)
   if (ma200 !== null && price > 0) {
     const devPct = ((price - ma200) / ma200) * 100;
     if (devPct > 0) {
-      score += 8;
+      score += 8; // above long-term MA = uptrend
       notes.push(`Above 200-day MA ($${ma200.toFixed(2)}) — uptrend.`);
     } else {
       score -= 8;
@@ -320,6 +342,7 @@ function scoreValuation(
     }
   }
 
+  // Momentum: 1-day price change
   if (changesPct > VALUATION.momentumBullish) {
     score += 5;
     notes.push(`+${changesPct.toFixed(1)}% today — positive momentum.`);
@@ -328,6 +351,7 @@ function scoreValuation(
     notes.push(`${changesPct.toFixed(1)}% today — negative momentum.`);
   }
 
+  // Penny regime: valuation metrics are less meaningful
   if (regime === 'penny' && score > 70) score = 70;
 
   const finalScore = clamp(score);
@@ -383,6 +407,8 @@ function scoreCompleteness(
     flag: flag(score),
   };
 }
+
+// ── Master scorer ─────────────────────────────────────────────────────────────
 
 export function runScoringEngine(
   ticker: string,
