@@ -8,6 +8,13 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
+  if (!process.env.FMP_API_KEY) {
+    return NextResponse.json(
+      { error: 'FMP_API_KEY is not configured. Go to Vercel → Project Settings → Environment Variables and add FMP_API_KEY.' },
+      { status: 503 }
+    );
+  }
+
   const ticker = req.nextUrl.searchParams.get('ticker')?.trim().toUpperCase();
 
   if (!ticker || !/^[A-Z0-9.^-]{1,10}$/.test(ticker)) {

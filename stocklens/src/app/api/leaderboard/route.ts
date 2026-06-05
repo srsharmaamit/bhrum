@@ -36,6 +36,13 @@ function toLeaderboardItem(item: FMPMoverItem): LeaderboardItem {
 }
 
 export async function GET() {
+  if (!process.env.FMP_API_KEY) {
+    return NextResponse.json(
+      { error: 'FMP_API_KEY is not configured.' },
+      { status: 503 }
+    );
+  }
+
   const [gainers, actives] = await Promise.all([getGainers(), getActives()]);
 
   const response: LeaderboardResponse = {
