@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
     const fmpErr = getLastFmpError();
     if (fmpErr === 'invalid_key') {
       return NextResponse.json(
-        { error: 'FMP API key is invalid or not yet activated. Visit /api/health for diagnostics, then verify FMP_API_KEY in Vercel → Project Settings → Environment Variables.' },
+        { error: 'FMP API key is invalid or not yet activated. Visit bhrum-yh95.vercel.app/api/health for diagnostics, then verify FMP_API_KEY in Vercel → Project Settings → Environment Variables.' },
         { status: 503 }
       );
     }

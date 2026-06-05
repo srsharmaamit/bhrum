@@ -14,7 +14,9 @@ export async function GET() {
   }
 
   try {
-    const url = new URL('https://financialmodelingprep.com/api/v3/quote/AAPL');
+    // Use the stable API — free tier keys only have access to /stable, not /api/v3
+    const url = new URL('https://financialmodelingprep.com/stable/quote');
+    url.searchParams.set('symbol', 'AAPL');
     url.searchParams.set('apikey', process.env.FMP_API_KEY);
 
     const res = await fetch(url.toString(), { cache: 'no-store' });
@@ -23,8 +25,8 @@ export async function GET() {
       return NextResponse.json({
         ok: false,
         stage: 'fmp_http',
-        message: `FMP returned HTTP ${res.status} ${res.statusText}`,
-        fix: 'Check Vercel function logs for network errors.',
+        message: `FMP stable API returned HTTP ${res.status} ${res.statusText}`,
+        fix: 'Check that your FMP_API_KEY is valid and your account is active.',
       });
     }
 
@@ -37,7 +39,7 @@ export async function GET() {
         stage: 'fmp_auth',
         message: 'FMP rejected the API key.',
         fmpMessage: msg,
-        fix: 'Verify your FMP_API_KEY is correct. Go to financialmodelingprep.com → Dashboard to copy your key. Also check that your email is verified and the account is active.',
+        fix: 'Go to financialmodelingprep.com → Dashboard, copy your API key exactly (no spaces), and update FMP_API_KEY in Vercel → Project Settings → Environment Variables.',
       });
     }
 
@@ -45,7 +47,7 @@ export async function GET() {
       return NextResponse.json({
         ok: true,
         stage: 'fmp_ok',
-        message: `FMP API key is valid. Test quote — ${data[0].symbol}: $${data[0].price}`,
+        message: `FMP stable API key is valid. AAPL price: $${data[0].price}`,
       });
     }
 
@@ -53,7 +55,7 @@ export async function GET() {
       ok: false,
       stage: 'fmp_unexpected',
       message: 'FMP returned an unexpected response format.',
-      received: JSON.stringify(data).slice(0, 200),
+      received: JSON.stringify(data).slice(0, 300),
     });
 
   } catch (e) {
