@@ -37,7 +37,7 @@ function LegendLine({ color, dashed }: { color: string; dashed?: boolean }) {
 export default function PriceTrendChart({ history, quote }: Props) {
   if (history.length < 3) {
     return (
-      <p className="text-xs text-slate-600 text-center py-3">
+      <p className="text-xs text-gray-400 text-center py-3">
         Insufficient price history for chart.
       </p>
     );
@@ -123,20 +123,20 @@ export default function PriceTrendChart({ history, quote }: Props) {
         <polyline
           points={pricePoints}
           fill="none"
-          stroke="#94A3B8"
+          stroke="#6B7280"
           strokeWidth="1.6"
           strokeLinejoin="round"
           strokeLinecap="round"
         />
 
         {/* Current-price endpoint dot */}
-        <circle cx={dotX} cy={dotY} r="3" fill="#E2E8F0" stroke="#475569" strokeWidth="1" />
+        <circle cx={dotX} cy={dotY} r="3" fill="#374151" stroke="#9CA3AF" strokeWidth="1" />
 
         {/* Current-price label (right padding area) */}
         <text
           x={chartRight + 5} y={dotY}
           dominantBaseline="middle"
-          fill="#E2E8F0"
+          fill="#111827"
           fontSize="10"
           fontWeight="600"
           fontFamily="Inter, system-ui, sans-serif"
@@ -147,26 +147,26 @@ export default function PriceTrendChart({ history, quote }: Props) {
 
       {/* Legend */}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 px-1 text-xs">
-        <span className="flex items-center gap-1.5 text-slate-500">
-          <LegendLine color="#94A3B8" />
+        <span className="flex items-center gap-1.5 text-gray-500">
+          <LegendLine color="#6B7280" />
           Price
         </span>
         {ma50 !== null && (
-          <span className="flex items-center gap-1.5 text-blue-400">
+          <span className="flex items-center gap-1.5 text-blue-600">
             <LegendLine color="#3B82F6" dashed />
             50-day MA
-            <span className="text-slate-500">{fmt(ma50)}</span>
+            <span className="text-gray-500">{fmt(ma50)}</span>
           </span>
         )}
         {ma200 !== null && (
-          <span className="flex items-center gap-1.5 text-amber-400">
+          <span className="flex items-center gap-1.5 text-amber-600">
             <LegendLine color="#F59E0B" dashed />
             200-day MA
-            <span className="text-slate-500">{fmt(ma200)}</span>
+            <span className="text-gray-500">{fmt(ma200)}</span>
           </span>
         )}
         {ma50 !== null && (
-          <span className="text-slate-600">
+          <span className="text-gray-400">
             ± 10% band shaded
           </span>
         )}

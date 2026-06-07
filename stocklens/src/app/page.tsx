@@ -84,10 +84,10 @@ function buildQuickStats(
 
 function RegimeBadge({ regime }: { regime: string }) {
   const styles: Record<string, string> = {
-    penny:      'bg-red-500/15 text-red-400 border-red-500/30',
-    'small-cap': 'bg-orange-500/15 text-orange-400 border-orange-500/30',
-    'mid-cap':  'bg-blue-500/15 text-blue-400 border-blue-500/30',
-    'large-cap': 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+    penny:      'bg-red-50 text-red-700 border-red-200',
+    'small-cap': 'bg-orange-50 text-orange-700 border-orange-200',
+    'mid-cap':  'bg-blue-50 text-blue-700 border-blue-200',
+    'large-cap': 'bg-emerald-50 text-emerald-700 border-emerald-200',
   };
   const labels: Record<string, string> = {
     penny: 'Penny Stock',
@@ -97,7 +97,7 @@ function RegimeBadge({ regime }: { regime: string }) {
   };
 
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border ${styles[regime] ?? 'bg-slate-500/15 text-slate-400 border-slate-500/30'}`}>
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border ${styles[regime] ?? 'bg-gray-100 text-gray-600 border-gray-200'}`}>
       {labels[regime] ?? regime}
     </span>
   );
@@ -187,10 +187,13 @@ export default function StockLens() {
   const profile = analysis?.profile;
   const quickStats = quote && profile ? buildQuickStats(quote, profile) : null;
 
+  // Suppress unused variable warning from tick
+  void tick;
+
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: '#0A1628' }}>
+    <div className="min-h-screen flex flex-col" style={{ background: '#F9FAFB' }}>
       {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <header className="border-b border-navy-700/50 bg-navy-900/80 backdrop-blur-sm sticky top-0 z-10">
+      <header className="border-b border-gray-200 bg-white/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             {/* Logo */}
@@ -200,21 +203,21 @@ export default function StockLens() {
                 <circle cx="16" cy="16" r="8" stroke="currentColor" strokeWidth="2.5" />
                 <path d="M10 20 L13 15 L16 17 L20 11 L23 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-              <span className="text-lg font-bold text-slate-100 tracking-tight">
+              <span className="text-lg font-bold text-gray-900 tracking-tight">
                 Stock<span className="text-accent">Lens</span>
               </span>
             </div>
-            <span className="hidden sm:inline-block text-xs text-slate-600 border border-navy-700 px-2 py-0.5 rounded-full">
+            <span className="hidden sm:inline-block text-xs text-gray-500 border border-gray-200 px-2 py-0.5 rounded-full">
               Risk Intelligence
             </span>
           </div>
 
           {/* Live indicator */}
-          <div className="flex items-center gap-2 text-xs text-slate-500">
+          <div className="flex items-center gap-2 text-xs text-gray-500">
             <span className="w-2 h-2 rounded-full bg-accent live-pulse" />
             <span className="hidden sm:inline">Live</span>
             {lastUpdated && (
-              <span className="text-slate-600">· Updated {timeSince(lastUpdated)}</span>
+              <span className="text-gray-400">· Updated {timeSince(lastUpdated)}</span>
             )}
           </div>
         </div>
@@ -225,10 +228,10 @@ export default function StockLens() {
 
         {/* Search */}
         <div className="mb-8">
-          <h1 className="text-center text-2xl sm:text-3xl font-bold text-slate-100 mb-2 tracking-tight">
+          <h1 className="text-center text-2xl sm:text-3xl font-bold text-gray-900 mb-2 tracking-tight">
             Stock Risk Intelligence
           </h1>
-          <p className="text-center text-sm text-slate-500 mb-6">
+          <p className="text-center text-sm text-gray-500 mb-6">
             Enter any ticker — penny stock or large-cap — for a transparent confidence score and plain-English risk verdict
           </p>
           <SearchBar
@@ -245,7 +248,7 @@ export default function StockLens() {
 
         {/* Error state */}
         {error && (
-          <div className="mb-6 p-4 rounded-xl border border-red-500/30 bg-red-500/10 text-red-400 text-sm text-center animate-fade-in">
+          <div className="mb-6 p-4 rounded-xl border border-red-200 bg-red-50 text-red-700 text-sm text-center animate-fade-in">
             {error}
           </div>
         )}
@@ -260,39 +263,39 @@ export default function StockLens() {
               {/* Ticker header */}
               {loading ? (
                 <div className="bg-navy-800 rounded-2xl p-4 animate-pulse flex gap-3">
-                  <div className="h-8 w-24 bg-navy-700 rounded-lg" />
-                  <div className="h-8 w-32 bg-navy-700 rounded-lg" />
+                  <div className="h-8 w-24 bg-gray-200 rounded-lg" />
+                  <div className="h-8 w-32 bg-gray-200 rounded-lg" />
                 </div>
               ) : analysis && (
                 <div className="bg-navy-800 rounded-2xl px-5 py-4 shadow-card animate-fade-in flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-3 flex-wrap">
-                    <h2 className="text-2xl font-bold text-slate-100 font-mono">
+                    <h2 className="text-2xl font-bold text-gray-900 font-mono">
                       {score?.ticker}
                     </h2>
                     {profile?.companyName && (
-                      <span className="text-slate-400 text-sm">{profile.companyName}</span>
+                      <span className="text-gray-600 text-sm">{profile.companyName}</span>
                     )}
                     {score?.regime && <RegimeBadge regime={score.regime} />}
                     {profile?.sector && (
-                      <span className="text-xs text-slate-600 bg-navy-700 px-2 py-0.5 rounded-full">
+                      <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
                         {profile.sector}
                       </span>
                     )}
                     {profile?.exchange && (
-                      <span className="text-xs text-slate-600">{profile.exchange}</span>
+                      <span className="text-xs text-gray-400">{profile.exchange}</span>
                     )}
                   </div>
                   <div className="flex items-center gap-3">
                     {quote?.price !== undefined && (
-                      <span className="text-2xl font-bold text-slate-100 font-mono">
+                      <span className="text-2xl font-bold text-gray-900 font-mono">
                         {formatPrice(quote.price)}
                       </span>
                     )}
                     <button
                       onClick={handleRefresh}
                       disabled={loading}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-400
-                                 bg-navy-700 hover:bg-navy-600 rounded-lg transition-colors disabled:opacity-50"
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-600
+                                 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50"
                     >
                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h5M20 20v-5h-5M4 9a9 9 0 0115.5-4.5M20 15a9 9 0 01-15.5 4.5" />
@@ -314,11 +317,11 @@ export default function StockLens() {
                   <div className="animate-fade-in">
                     {/* Gauge centered */}
                     <div className="flex flex-col items-center mb-5">
-                      <div className="text-xs text-slate-600 uppercase tracking-widest mb-3">
+                      <div className="text-xs text-gray-400 uppercase tracking-widest mb-3">
                         Confidence Factor
                       </div>
                       <ConfidenceGauge score={score.confidenceFactor} size={200} />
-                      <p className="text-xs text-slate-600 mt-2 text-center max-w-xs">
+                      <p className="text-xs text-gray-400 mt-2 text-center max-w-xs">
                         High score = lower-risk setup. This is <em>not</em> a buy/sell recommendation.
                       </p>
                     </div>
@@ -330,21 +333,21 @@ export default function StockLens() {
                     {quickStats && (
                       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                         {quickStats.map(stat => (
-                          <div key={stat.label} className="bg-navy-700/50 rounded-xl p-3">
-                            <div className="text-xs text-slate-600 mb-1">{stat.label}</div>
+                          <div key={stat.label} className="bg-gray-50 rounded-xl p-3">
+                            <div className="text-xs text-gray-400 mb-1">{stat.label}</div>
                             <div
                               className={`text-sm font-semibold ${
                                 stat.positive === true
-                                  ? 'text-emerald-400'
+                                  ? 'text-emerald-700'
                                   : stat.positive === false
-                                  ? 'text-red-400'
-                                  : 'text-slate-200'
+                                  ? 'text-red-700'
+                                  : 'text-gray-800'
                               }`}
                             >
                               {stat.value}
                             </div>
                             {stat.sub && (
-                              <div className="text-xs text-slate-600 mt-0.5">{stat.sub}</div>
+                              <div className="text-xs text-gray-400 mt-0.5">{stat.sub}</div>
                             )}
                           </div>
                         ))}
@@ -364,17 +367,17 @@ export default function StockLens() {
               {/* Technical context — price trend, 52-week range, relative volume */}
               {!loading && analysis && (analysis.history?.length ?? 0) >= 3 && (
                 <div className="bg-navy-800 rounded-2xl p-4 shadow-card animate-fade-in space-y-5">
-                  <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">
+                  <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
                     Technical Context
                   </h2>
                   <div>
-                    <p className="text-xs text-slate-600 mb-2">Price vs Moving Averages</p>
+                    <p className="text-xs text-gray-400 mb-2">Price vs Moving Averages</p>
                     <PriceTrendChart history={analysis.history} quote={analysis.quote} />
                   </div>
                   {quote?.yearLow !== undefined && quote.yearHigh !== undefined &&
                    quote.price !== undefined && quote.yearHigh > 0 && (
                     <div>
-                      <p className="text-xs text-slate-600 mb-1">52-Week Range</p>
+                      <p className="text-xs text-gray-400 mb-1">52-Week Range</p>
                       <RangeBar52w
                         yearLow={quote.yearLow}
                         yearHigh={quote.yearHigh}
@@ -385,7 +388,7 @@ export default function StockLens() {
                   {quote?.volume !== undefined && quote.avgVolume !== undefined &&
                    quote.avgVolume > 0 && (
                     <div>
-                      <p className="text-xs text-slate-600 mb-1">Relative Volume</p>
+                      <p className="text-xs text-gray-400 mb-1">Relative Volume</p>
                       <RvolGauge volume={quote.volume} avgVolume={quote.avgVolume} />
                     </div>
                   )}
@@ -402,8 +405,8 @@ export default function StockLens() {
               {/* Company description */}
               {!loading && profile?.description && (
                 <div className="bg-navy-800 rounded-2xl p-4 shadow-card animate-fade-in">
-                  <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">About</h3>
-                  <p className="text-sm text-slate-500 leading-relaxed line-clamp-4">
+                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">About</h3>
+                  <p className="text-sm text-gray-600 leading-relaxed line-clamp-4">
                     {profile.description}
                   </p>
                 </div>
@@ -430,8 +433,8 @@ export default function StockLens() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
                 </svg>
               </div>
-              <p className="text-slate-500 text-sm">Type any ticker above to see its confidence score</p>
-              <p className="text-slate-700 text-xs mt-1">Works with any US-listed stock, penny stock, or ETF</p>
+              <p className="text-gray-500 text-sm">Type any ticker above to see its confidence score</p>
+              <p className="text-gray-400 text-xs mt-1">Works with any US-listed stock, penny stock, or ETF</p>
             </div>
             <Leaderboard
               data={leaderboard}
@@ -443,14 +446,14 @@ export default function StockLens() {
       </main>
 
       {/* ── Footer ─────────────────────────────────────────────────────────── */}
-      <footer className="border-t border-navy-700/50 mt-auto">
+      <footer className="border-t border-gray-200 mt-auto">
         <div className="max-w-7xl mx-auto px-4 py-5 text-center space-y-1">
-          <p className="text-xs text-slate-600">
-            <strong className="text-slate-500">Educational tool only.</strong>{' '}
+          <p className="text-xs text-gray-500">
+            <strong className="text-gray-600">Educational tool only.</strong>{' '}
             Not financial advice. Scores measure risk/quality characteristics, not future returns.
             Past performance is not indicative of future results.
           </p>
-          <p className="text-xs text-slate-700">
+          <p className="text-xs text-gray-400">
             Data via Financial Modeling Prep · Refreshes every 5 minutes · Free tier rate-limit aware
           </p>
         </div>

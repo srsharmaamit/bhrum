@@ -31,7 +31,7 @@ export default function SearchBar({ onSearch, loading, initialValue = '' }: Prop
     <div className="w-full max-w-xl mx-auto">
       <form onSubmit={handleSubmit} className="relative">
         <div className="relative">
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none">
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
             </svg>
@@ -42,12 +42,12 @@ export default function SearchBar({ onSearch, loading, initialValue = '' }: Prop
             placeholder="Enter ticker symbol (e.g. AAPL, GME, TSLA)"
             maxLength={10} autoComplete="off" spellCheck={false}
             className="w-full pl-12 pr-32 py-3.5 bg-navy-800 border border-navy-600 rounded-2xl
-                       text-slate-100 placeholder-slate-600 font-mono text-sm
+                       text-gray-900 placeholder-gray-400 font-mono text-sm
                        focus:outline-none focus:ring-2 focus:ring-accent/60 focus:border-accent/50
                        transition-all duration-200 shadow-card" />
           <button type="submit" disabled={loading || !value.trim()}
             className="absolute right-2 top-1/2 -translate-y-1/2
-                       px-4 py-2 bg-accent hover:bg-accent-dim disabled:bg-navy-700 disabled:text-slate-600
+                       px-4 py-2 bg-accent hover:bg-accent-dim disabled:bg-gray-200 disabled:text-gray-400
                        text-white text-sm font-semibold rounded-xl
                        transition-colors duration-200 disabled:cursor-not-allowed flex items-center gap-2">
             {loading ? (
@@ -65,7 +65,7 @@ export default function SearchBar({ onSearch, loading, initialValue = '' }: Prop
       <div className="flex flex-wrap gap-1.5 mt-3 justify-center">
         {SUGGESTIONS.map(s => (
           <button key={s} onClick={() => { setValue(s); onSearch(s); }}
-            className="px-2.5 py-1 text-xs font-mono text-slate-500 bg-navy-800/60 border border-navy-700
+            className="px-2.5 py-1 text-xs font-mono text-gray-500 bg-gray-100 border border-gray-200
                        rounded-lg hover:border-accent/50 hover:text-accent transition-colors duration-150">
             {s}
           </button>
