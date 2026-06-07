@@ -14,9 +14,8 @@ export async function GET() {
   }
 
   try {
-    // Use the stable API — free tier keys only have access to /stable, not /api/v3
-    const url = new URL('https://financialmodelingprep.com/stable/quote');
-    url.searchParams.set('symbol', 'AAPL');
+    // v3 API — available on the free tier (250 calls/day)
+    const url = new URL('https://financialmodelingprep.com/api/v3/quote/AAPL');
     url.searchParams.set('apikey', process.env.FMP_API_KEY);
 
     const res = await fetch(url.toString(), { cache: 'no-store' });
@@ -25,29 +24,32 @@ export async function GET() {
       return NextResponse.json({
         ok: false,
         stage: 'fmp_http',
-        message: `FMP stable API returned HTTP ${res.status} ${res.statusText}`,
-        fix: 'Check that your FMP_API_KEY is valid and your account is active.',
+        message: `FMP API returned HTTP ${res.status} ${res.statusText}`,
+        fix: 'Check that your FMP_API_KEY is valid and your account is active at financialmodelingprep.com.',
       });
     }
 
     const data = await res.json();
 
-    if (data && typeof data === 'object' && !Array.isArray(data) && 'Error Message' in data) {
-      const msg: string = (data as Record<string, string>)['Error Message'] ?? '';
-      return NextResponse.json({
-        ok: false,
-        stage: 'fmp_auth',
-        message: 'FMP rejected the API key.',
-        fmpMessage: msg,
-        fix: 'Go to financialmodelingprep.com → Dashboard, copy your API key exactly (no spaces), and update FMP_API_KEY in Vercel → Project Settings → Environment Variables.',
-      });
+    if (data && typeof data === 'object' && !Array.isArray(data)) {
+      const obj = data as Record<string, string>;
+      const errMsg = obj['Error Message'] ?? obj['message'] ?? '';
+      if (errMsg) {
+        return NextResponse.json({
+          ok: false,
+          stage: 'fmp_auth',
+          message: 'FMP rejected the API key.',
+          fmpMessage: errMsg,
+          fix: 'Go to financialmodelingprep.com → Dashboard, copy your API key exactly (no spaces), and update FMP_API_KEY in Vercel → Project Settings → Environment Variables.',
+        });
+      }
     }
 
     if (Array.isArray(data) && data.length > 0 && data[0]?.symbol) {
       return NextResponse.json({
         ok: true,
         stage: 'fmp_ok',
-        message: `FMP stable API key is valid. AAPL price: $${data[0].price}`,
+        message: `FMP v3 API key is valid. AAPL price: $${data[0].price}`,
       });
     }
 
