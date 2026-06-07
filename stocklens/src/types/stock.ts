@@ -140,3 +140,23 @@ export interface LeaderboardResponse {
   fetchedAt: number;
   error?: string;
 }
+
+// ── Watchlist comparison types ──────────────────────────────────────────────────────────────────────
+
+export interface WatchlistItem {
+  symbol: string;
+  name: string;
+  price: number;
+  changesPercentage: number;
+  regime: StockRegime;
+  score: number;       // 0–100 lightweight quote-only score
+  flag: MetricFlag;
+  marketCap: number | null;
+  volume: number;
+}
+
+export interface WatchlistResponse {
+  items: WatchlistItem[];
+  fetchedAt: number;
+  error?: string;
+}

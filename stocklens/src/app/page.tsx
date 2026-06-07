@@ -7,6 +7,7 @@ import ScoreDecomposition from '@/components/ScoreDecomposition';
 import MetricBreakdown from '@/components/MetricBreakdown';
 import VerdictPanel from '@/components/VerdictPanel';
 import Leaderboard from '@/components/Leaderboard';
+import WatchlistTable from '@/components/WatchlistTable';
 import {
   GaugeSkeleton,
   QuickStatsSkeleton,
@@ -232,6 +233,11 @@ export default function StockLens() {
             loading={loading}
             initialValue={currentTicker}
           />
+        </div>
+
+        {/* Watchlist comparison */}
+        <div className="mb-6">
+          <WatchlistTable onSelectTicker={handleSearch} />
         </div>
 
         {/* Error state */}

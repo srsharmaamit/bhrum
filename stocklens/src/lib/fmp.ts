@@ -141,15 +141,12 @@ interface StableProfileRaw {
 
 // ── Public getters — each normalises stable→internal types ────────────────────
 
-export async function getQuote(ticker: string): Promise<FMPQuote | null> {
-  const data = await fetchFMP<StableQuoteRaw[]>('/quote', { symbol: ticker.toUpperCase() });
-  if (!data?.[0]) return null;
-  const raw = data[0];
+function normalizeQuote(raw: StableQuoteRaw): FMPQuote {
   return {
     symbol: raw.symbol,
     name: raw.name,
     price: raw.price,
-    // Normalise: stable uses changePercentage, v3 used changesPercentage
+    // stable uses changePercentage; v3 used changesPercentage
     changesPercentage: raw.changesPercentage ?? raw.changePercentage ?? 0,
     change: raw.change,
     dayLow: raw.dayLow,
@@ -170,6 +167,33 @@ export async function getQuote(ticker: string): Promise<FMPQuote | null> {
     sharesOutstanding: raw.sharesOutstanding,
     timestamp: raw.timestamp,
   };
+}
+
+export async function getQuote(ticker: string): Promise<FMPQuote | null> {
+  const data = await fetchFMP<StableQuoteRaw[]>('/quote', { symbol: ticker.toUpperCase() });
+  if (!data?.[0]) return null;
+  return normalizeQuote(data[0]);
+}
+
+/**
+ * Fetches quotes for multiple tickers in ONE FMP call (comma-separated symbol param).
+ * If the batch call fails (free-tier key may reject multi-symbol), falls back to
+ * individual getQuote calls capped at 10 tickers and logs a warning.
+ */
+export async function getQuotesBatch(tickers: string[]): Promise<FMPQuote[]> {
+  if (tickers.length === 0) return [];
+
+  const symbols = tickers.map(t => t.toUpperCase()).join(',');
+  const data = await fetchFMP<StableQuoteRaw[]>('/quote', { symbol: symbols });
+
+  if (data === null) {
+    console.warn('[fmp] Batch quote unavailable; falling back to individual getQuote calls');
+    const capped = tickers.slice(0, 10);
+    const results = await Promise.all(capped.map(t => getQuote(t)));
+    return results.filter((q): q is FMPQuote => q !== null);
+  }
+
+  return data.map(normalizeQuote);
 }
 
 export async function getProfile(ticker: string): Promise<FMPProfile | null> {
