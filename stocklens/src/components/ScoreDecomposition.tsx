@@ -15,10 +15,10 @@ const FLAG_BAR: Record<MetricFlag, string> = {
 };
 
 const FLAG_TEXT: Record<MetricFlag, string> = {
-  good:    'text-emerald-400',
-  neutral: 'text-blue-300',
-  warning: 'text-amber-400',
-  danger:  'text-red-400',
+  good:    'text-emerald-700',
+  neutral: 'text-blue-700',
+  warning: 'text-amber-700',
+  danger:  'text-red-700',
 };
 
 export default function ScoreDecomposition({ metrics, total }: Props) {
@@ -27,7 +27,7 @@ export default function ScoreDecomposition({ metrics, total }: Props) {
   return (
     <div className="mt-3 mb-1">
       {/* Segmented contribution bar — each segment width = contribution pts out of 100 */}
-      <div className="relative h-2.5 bg-navy-700 rounded-full overflow-hidden flex">
+      <div className="relative h-2.5 bg-gray-200 rounded-full overflow-hidden flex">
         {metrics
           .filter(m => m.contribution > 0)
           .map(m => (
@@ -49,18 +49,18 @@ export default function ScoreDecomposition({ metrics, total }: Props) {
             title={m.detail}
           >
             <span className={`inline-block w-2 h-2 rounded-sm shrink-0 ${FLAG_BAR[m.flag]}`} />
-            <span className="text-slate-400 truncate">{m.name}</span>
+            <span className="text-gray-600 truncate">{m.name}</span>
             <span className={`ml-auto shrink-0 font-semibold tabular-nums ${FLAG_TEXT[m.flag]}`}>
               {m.contribution.toFixed(1)}
             </span>
-            <span className="text-slate-600 shrink-0">
+            <span className="text-gray-400 shrink-0">
               /{Math.round(m.weight * 100)}%
             </span>
           </div>
         ))}
       </div>
 
-      <p className="text-xs text-slate-700 mt-2 text-center">
+      <p className="text-xs text-gray-400 mt-2 text-center">
         Segments show each metric&apos;s weighted contribution · {Math.round(safeTotal)}/100 total
       </p>
     </div>

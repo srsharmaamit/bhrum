@@ -5,13 +5,14 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Light-gray surface scale (replaces the old dark-navy palette)
         navy: {
-          950: '#040D1E',
-          900: '#0A1628',
-          800: '#0F1F3D',
-          700: '#162847',
-          600: '#1E3560',
-          500: '#264273',
+          950: '#D1D5DB', // gray-300
+          900: '#F9FAFB', // gray-50  — page background
+          800: '#FFFFFF', // white    — card background
+          700: '#F3F4F6', // gray-100 — secondary areas, subtle borders
+          600: '#E5E7EB', // gray-200 — stronger borders / dividers
+          500: '#D1D5DB', // gray-300 — even stronger borders
         },
         accent: {
           DEFAULT: '#3B82F6',
@@ -39,8 +40,8 @@ const config: Config = {
         },
       },
       boxShadow: {
-        card: '0 4px 24px rgba(0,0,0,0.4)',
-        glow: '0 0 20px rgba(59,130,246,0.25)',
+        card: '0 1px 8px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.04)',
+        glow: '0 0 16px rgba(59,130,246,0.15)',
       },
     },
   },

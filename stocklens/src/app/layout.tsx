@@ -10,10 +10,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en">
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="theme-color" content="#0A1628" />
+        <meta name="theme-color" content="#F9FAFB" />
       </head>
       <body className="bg-navy-900 min-h-screen antialiased">{children}</body>
     </html>

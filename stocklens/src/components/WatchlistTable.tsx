@@ -24,9 +24,9 @@ const FLAG_DOT: Record<MetricFlag, string> = {
 };
 
 function scoreColor(s: number): string {
-  if (s >= 65) return 'text-emerald-400 bg-emerald-500/10';
-  if (s >= 45) return 'text-amber-400 bg-amber-500/10';
-  return 'text-red-400 bg-red-500/10';
+  if (s >= 65) return 'text-emerald-700 bg-emerald-50';
+  if (s >= 45) return 'text-amber-700 bg-amber-50';
+  return 'text-red-700 bg-red-50';
 }
 
 function sortItems(items: WatchlistItem[], key: SortKey, dir: SortDir): WatchlistItem[] {
@@ -54,13 +54,13 @@ function SortHeader({
   return (
     <th
       className={`text-xs font-medium uppercase tracking-wider pb-2 cursor-pointer select-none
-        hover:text-slate-300 transition-colors whitespace-nowrap ${
-          active ? 'text-accent' : 'text-slate-500'
+        hover:text-gray-800 transition-colors whitespace-nowrap ${
+          active ? 'text-accent' : 'text-gray-500'
         } ${className}`}
       onClick={() => onClick(col)}
     >
       {label}
-      <span className={`ml-1 ${active ? 'text-accent' : 'text-slate-700'}`}>
+      <span className={`ml-1 ${active ? 'text-accent' : 'text-gray-300'}`}>
         {active ? (dir === 'asc' ? '↑' : '↓') : '↕'}
       </span>
     </th>
@@ -72,23 +72,23 @@ function TableRow({ item, onClick }: { item: WatchlistItem; onClick: () => void 
   return (
     <tr
       onClick={onClick}
-      className="cursor-pointer hover:bg-navy-700/40 transition-colors group border-t border-navy-700/30"
+      className="cursor-pointer hover:bg-gray-50 transition-colors group border-t border-gray-100"
     >
       <td className="py-2.5 pl-3 pr-2 w-6">
         <span className={`inline-block w-2 h-2 rounded-full ${FLAG_DOT[item.flag]}`} />
       </td>
       <td className="py-2.5 pr-3">
-        <div className="text-sm font-bold text-slate-100 group-hover:text-accent transition-colors font-mono leading-tight">
+        <div className="text-sm font-bold text-gray-900 group-hover:text-accent transition-colors font-mono leading-tight">
           {item.symbol}
         </div>
-        <div className="text-xs text-slate-600 truncate max-w-[90px] leading-tight">{item.name}</div>
+        <div className="text-xs text-gray-400 truncate max-w-[90px] leading-tight">{item.name}</div>
       </td>
       <td className="py-2.5 pr-3 text-right">
-        <span className="text-sm font-semibold text-slate-200 tabular-nums">
+        <span className="text-sm font-semibold text-gray-800 tabular-nums">
           {item.price < 10 ? `$${item.price.toFixed(4)}` : `$${item.price.toFixed(2)}`}
         </span>
       </td>
-      <td className={`py-2.5 pr-3 text-right text-sm font-medium tabular-nums ${isPos ? 'text-emerald-400' : 'text-red-400'}`}>
+      <td className={`py-2.5 pr-3 text-right text-sm font-medium tabular-nums ${isPos ? 'text-emerald-600' : 'text-red-600'}`}>
         {isPos ? '+' : ''}{item.changesPercentage.toFixed(2)}%
       </td>
       <td className="py-2.5 pr-3 text-right">
@@ -97,7 +97,7 @@ function TableRow({ item, onClick }: { item: WatchlistItem; onClick: () => void 
         </span>
       </td>
       <td className="py-2.5 pr-3 text-right">
-        <span className="text-xs text-slate-500 capitalize">{item.regime}</span>
+        <span className="text-xs text-gray-500 capitalize">{item.regime}</span>
       </td>
     </tr>
   );
@@ -107,16 +107,16 @@ function TableSkeleton() {
   return (
     <tbody>
       {[...Array(5)].map((_, i) => (
-        <tr key={i} className="border-t border-navy-700/30 animate-pulse">
-          <td className="py-2.5 pl-3 pr-2"><div className="w-2 h-2 rounded-full bg-navy-700" /></td>
+        <tr key={i} className="border-t border-gray-100 animate-pulse">
+          <td className="py-2.5 pl-3 pr-2"><div className="w-2 h-2 rounded-full bg-gray-200" /></td>
           <td className="py-2.5 pr-3">
-            <div className="h-3 w-12 bg-navy-700 rounded mb-1" />
-            <div className="h-2.5 w-20 bg-navy-700 rounded" />
+            <div className="h-3 w-12 bg-gray-200 rounded mb-1" />
+            <div className="h-2.5 w-20 bg-gray-200 rounded" />
           </td>
-          <td className="py-2.5 pr-3"><div className="h-3 w-16 bg-navy-700 rounded ml-auto" /></td>
-          <td className="py-2.5 pr-3"><div className="h-3 w-12 bg-navy-700 rounded ml-auto" /></td>
-          <td className="py-2.5 pr-3"><div className="h-5 w-8 bg-navy-700 rounded ml-auto" /></td>
-          <td className="py-2.5 pr-3"><div className="h-3 w-14 bg-navy-700 rounded ml-auto" /></td>
+          <td className="py-2.5 pr-3"><div className="h-3 w-16 bg-gray-200 rounded ml-auto" /></td>
+          <td className="py-2.5 pr-3"><div className="h-3 w-12 bg-gray-200 rounded ml-auto" /></td>
+          <td className="py-2.5 pr-3"><div className="h-5 w-8 bg-gray-200 rounded ml-auto" /></td>
+          <td className="py-2.5 pr-3"><div className="h-3 w-14 bg-gray-200 rounded ml-auto" /></td>
         </tr>
       ))}
     </tbody>
@@ -204,17 +204,17 @@ export default function WatchlistTable({ onSelectTicker }: Props) {
   return (
     <div className="bg-navy-800 rounded-2xl shadow-card overflow-hidden">
       {/* Header */}
-      <div className="px-4 pt-4 pb-3 border-b border-navy-700/50 flex flex-wrap items-center gap-3">
+      <div className="px-4 pt-4 pb-3 border-b border-gray-200 flex flex-wrap items-center gap-3">
         <div className="flex-1 min-w-0">
-          <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
+          <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
             Watchlist
             {lastUpdated && (
-              <span className="ml-2 text-xs font-normal text-slate-600 normal-case tracking-normal">
+              <span className="ml-2 text-xs font-normal text-gray-400 normal-case tracking-normal">
                 · Updated {lastUpdated}
               </span>
             )}
           </h2>
-          <p className="text-xs text-slate-600 mt-0.5">Compare tickers side-by-side · click a row to analyze</p>
+          <p className="text-xs text-gray-400 mt-0.5">Compare tickers side-by-side · click a row to analyze</p>
         </div>
 
         {/* Ticker input */}
@@ -229,8 +229,8 @@ export default function WatchlistTable({ onSelectTicker }: Props) {
                 onKeyDown={handleKeyDown}
                 onBlur={applyTickers}
                 placeholder="AAPL,MSFT,TSLA (max 15)"
-                className="flex-1 sm:w-64 text-xs bg-navy-700 border border-accent/40 rounded-lg px-3 py-1.5
-                           text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-accent/60 font-mono"
+                className="flex-1 sm:w-64 text-xs bg-gray-50 border border-accent/40 rounded-lg px-3 py-1.5
+                           text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-accent/60 font-mono"
               />
               <button
                 onClick={applyTickers}
@@ -242,9 +242,9 @@ export default function WatchlistTable({ onSelectTicker }: Props) {
           ) : (
             <button
               onClick={() => setEditing(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-400
-                         bg-navy-700 hover:bg-navy-600 rounded-lg transition-colors border border-transparent
-                         hover:border-navy-600 font-mono"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-600
+                         bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors border border-transparent
+                         hover:border-gray-200 font-mono"
               title="Edit watchlist tickers"
             >
               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -274,7 +274,7 @@ export default function WatchlistTable({ onSelectTicker }: Props) {
           ) : sortedItems.length === 0 ? (
             <tbody>
               <tr>
-                <td colSpan={6} className="py-8 text-center text-sm text-slate-600">
+                <td colSpan={6} className="py-8 text-center text-sm text-gray-400">
                   {appliedTickers ? 'No data returned — check your ticker symbols.' : 'Loading…'}
                 </td>
               </tr>
@@ -293,7 +293,7 @@ export default function WatchlistTable({ onSelectTicker }: Props) {
         </table>
       </div>
 
-      <div className="px-4 py-2.5 text-xs text-slate-700 border-t border-navy-700/30">
+      <div className="px-4 py-2.5 text-xs text-gray-400 border-t border-gray-100">
         Score = lightweight quote-only signal (liquidity + volatility + earnings + momentum). Not financial advice.
       </div>
     </div>

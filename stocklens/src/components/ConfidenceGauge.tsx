@@ -71,7 +71,7 @@ export default function ConfidenceGauge({ score, size = 200 }: Props) {
             </feMerge>
           </filter>
         </defs>
-        <circle cx={cx} cy={cy} r={radius} fill="none" stroke="#1E3560"
+        <circle cx={cx} cy={cy} r={radius} fill="none" stroke="#E5E7EB"
           strokeWidth={size * 0.065} strokeLinecap="round"
           strokeDasharray={`${arcLength} ${circumference}`}
           strokeDashoffset={0}
@@ -90,7 +90,7 @@ export default function ConfidenceGauge({ score, size = 200 }: Props) {
           {displayed}
         </text>
         <text x={cx} y={cy + size * 0.14} textAnchor="middle" dominantBaseline="middle"
-          fill="#64748B" fontSize={size * 0.08} fontFamily="Inter, system-ui, sans-serif">
+          fill="#9CA3AF" fontSize={size * 0.08} fontFamily="Inter, system-ui, sans-serif">
           / 100
         </text>
       </svg>

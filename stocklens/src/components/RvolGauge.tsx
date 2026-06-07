@@ -50,7 +50,7 @@ function fmtVol(v: number): string {
 
 export default function RvolGauge({ volume, avgVolume }: Props) {
   if (avgVolume <= 0) {
-    return <p className="text-xs text-slate-600 text-center py-2">Volume data unavailable.</p>;
+    return <p className="text-xs text-gray-400 text-center py-2">Volume data unavailable.</p>;
   }
 
   const ratio = volume / avgVolume;
@@ -78,7 +78,7 @@ export default function RvolGauge({ volume, avgVolume }: Props) {
       {/* Track background */}
       <rect
         x={BAR_X1} y={BAR_Y} width={BAR_X2 - BAR_X1} height={BAR_H}
-        rx="6" fill="#162847"
+        rx="6" fill="#E5E7EB"
       />
 
       {/* Filled bar up to current ratio (clamped) */}
@@ -94,12 +94,12 @@ export default function RvolGauge({ volume, avgVolume }: Props) {
         <g key={tk.label}>
           <line
             x1={tk.x} y1={tickTop} x2={tk.x} y2={tickBottom}
-            stroke="#0F1F3D" strokeWidth="1.5"
+            stroke="#9CA3AF" strokeWidth="1.5"
           />
           <text
             x={tk.x} y={BAR_Y + BAR_H + 13}
             textAnchor="middle" dominantBaseline="middle"
-            fill="#475569" fontSize="8.5"
+            fill="#9CA3AF" fontSize="8.5"
             fontFamily="Inter, system-ui, sans-serif"
           >
             {tk.label}
@@ -121,7 +121,7 @@ export default function RvolGauge({ volume, avgVolume }: Props) {
       <text
         x={BAR_X2} y={BAR_Y + BAR_H + 13}
         textAnchor="end" dominantBaseline="middle"
-        fill="#334155" fontSize="8.5"
+        fill="#9CA3AF" fontSize="8.5"
         fontFamily="Inter, system-ui, sans-serif"
       >
         {fmtVol(volume)} / {fmtVol(avgVolume)} avg

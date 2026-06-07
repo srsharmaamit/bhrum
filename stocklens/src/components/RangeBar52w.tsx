@@ -35,7 +35,7 @@ function positionColor(pct: number): string {
 
 export default function RangeBar52w({ yearLow, yearHigh, price }: Props) {
   if (yearHigh <= yearLow || yearHigh === 0) {
-    return <p className="text-xs text-slate-600 text-center py-2">52-week range unavailable.</p>;
+    return <p className="text-xs text-gray-400 text-center py-2">52-week range unavailable.</p>;
   }
 
   const pct = Math.max(0, Math.min(1, (price - yearLow) / (yearHigh - yearLow)));
@@ -60,7 +60,7 @@ export default function RangeBar52w({ yearLow, yearHigh, price }: Props) {
       {/* Track background */}
       <rect
         x={BAR_X1} y={BAR_Y} width={BAR_X2 - BAR_X1} height={BAR_H}
-        rx="5" fill="#162847"
+        rx="5" fill="#E5E7EB"
       />
 
       {/* Filled portion from low to current price */}
@@ -88,7 +88,7 @@ export default function RangeBar52w({ yearLow, yearHigh, price }: Props) {
       <text
         x={labelX} y={BAR_Y + BAR_H + 13}
         textAnchor="middle" dominantBaseline="middle"
-        fill="#64748B" fontSize="8.5"
+        fill="#9CA3AF" fontSize="8.5"
         fontFamily="Inter, system-ui, sans-serif"
       >
         {pctLabel}
@@ -98,7 +98,7 @@ export default function RangeBar52w({ yearLow, yearHigh, price }: Props) {
       <text
         x={BAR_X1} y={BAR_Y + BAR_H + 13}
         textAnchor="start" dominantBaseline="middle"
-        fill="#475569" fontSize="9"
+        fill="#9CA3AF" fontSize="9"
         fontFamily="Inter, system-ui, sans-serif"
       >
         {fmt(yearLow)}
@@ -108,7 +108,7 @@ export default function RangeBar52w({ yearLow, yearHigh, price }: Props) {
       <text
         x={BAR_X2} y={BAR_Y + BAR_H + 13}
         textAnchor="end" dominantBaseline="middle"
-        fill="#475569" fontSize="9"
+        fill="#9CA3AF" fontSize="9"
         fontFamily="Inter, system-ui, sans-serif"
       >
         {fmt(yearHigh)}
