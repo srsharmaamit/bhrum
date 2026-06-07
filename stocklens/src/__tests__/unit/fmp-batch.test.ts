@@ -19,9 +19,10 @@ function fail(status = 503): Promise<Response> {
   return Promise.resolve({ ok: false, status, json: () => Promise.resolve({}) } as Response);
 }
 
+// v3 API uses changesPercentage directly (no changePercentage alias)
 const rawAapl = {
   symbol: 'AAPL', name: 'Apple Inc.', price: 185,
-  changePercentage: 0.85,             // stable API field name
+  changesPercentage: 0.85,
   change: 1.56, dayLow: 183, dayHigh: 187,
   yearHigh: 199.62, yearLow: 124.17,
   marketCap: 2_870_000_000_000, priceAvg50: 181, priceAvg200: 165,
@@ -33,7 +34,7 @@ const rawAapl = {
 
 const rawMsft = {
   symbol: 'MSFT', name: 'Microsoft Corp.', price: 400,
-  changePercentage: -0.3,
+  changesPercentage: -0.3,
   change: -1.2, dayLow: 398, dayHigh: 403,
   yearHigh: 430, yearLow: 310,
   marketCap: 3_000_000_000_000, priceAvg50: 390, priceAvg200: 380,
@@ -66,18 +67,18 @@ describe('getQuotesBatch', () => {
     expect(calledUrl).toContain('MSFT');
   });
 
-  it('normalizes changePercentage → changesPercentage for all items', async () => {
+  it('reads changesPercentage from v3 response for all items', async () => {
     mockFetch.mockImplementation(() => ok([rawAapl, rawMsft]));
     const results = await getQuotesBatch(['AAPL', 'MSFT']);
     expect(results[0].changesPercentage).toBe(0.85);
     expect(results[1].changesPercentage).toBe(-0.3);
   });
 
-  it('prefers changesPercentage over changePercentage when both present', async () => {
-    const withBoth = [{ ...rawAapl, changesPercentage: 1.5 }]; // explicit field takes priority
-    mockFetch.mockImplementation(() => ok(withBoth));
+  it('defaults changesPercentage to 0 when field is null', async () => {
+    const withNull = [{ ...rawAapl, changesPercentage: null }];
+    mockFetch.mockImplementation(() => ok(withNull));
     const results = await getQuotesBatch(['AAPL']);
-    expect(results[0].changesPercentage).toBe(1.5);
+    expect(results[0].changesPercentage).toBe(0);
   });
 
   it('maps all FMPQuote fields correctly', async () => {
@@ -100,11 +101,11 @@ describe('getQuotesBatch', () => {
 
   it('falls back to individual getQuote calls when batch returns a non-ok response', async () => {
     mockFetch.mockImplementation((url: string) => {
-      // Batch call (both symbols in URL) → fail
+      // Batch call has both symbols in URL — fail it
       if (url.includes('AAPL') && url.includes('MSFT')) return fail(403);
-      // Individual calls → succeed
-      if (url.includes('symbol=AAPL')) return ok([rawAapl]);
-      if (url.includes('symbol=MSFT')) return ok([rawMsft]);
+      // Individual calls — succeed (batch was caught above so these are single-ticker)
+      if (url.includes('AAPL')) return ok([rawAapl]);
+      if (url.includes('MSFT')) return ok([rawMsft]);
       return ok([]);
     });
     const results = await getQuotesBatch(['AAPL', 'MSFT']);
@@ -124,8 +125,8 @@ describe('getQuotesBatch', () => {
   it('returns only successfully fetched quotes from fallback', async () => {
     mockFetch.mockImplementation((url: string) => {
       if (url.includes('AAPL') && url.includes('MSFT')) return fail(403);
-      if (url.includes('symbol=AAPL')) return ok([rawAapl]);
-      if (url.includes('symbol=MSFT')) return ok([]); // MSFT returns empty → null
+      if (url.includes('AAPL')) return ok([rawAapl]);
+      if (url.includes('MSFT')) return ok([]); // MSFT returns empty → null
       return ok([]);
     });
     const results = await getQuotesBatch(['AAPL', 'MSFT']);
