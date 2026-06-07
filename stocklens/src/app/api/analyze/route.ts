@@ -46,8 +46,14 @@ export async function GET(req: NextRequest) {
         { status: 429 }
       );
     }
+    if (fmpErr === 'network') {
+      return NextResponse.json(
+        { error: 'Could not reach the FMP data provider. Check /api/health to diagnose your API key, or try again in a moment.' },
+        { status: 503 }
+      );
+    }
     return NextResponse.json(
-      { error: `No data found for ticker "${ticker}". Check the symbol and try again.` },
+      { error: `No data found for ticker "${ticker}". Verify the symbol is a valid US-listed ticker.` },
       { status: 404 }
     );
   }
