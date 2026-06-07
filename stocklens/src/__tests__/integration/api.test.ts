@@ -37,17 +37,17 @@ const aaplQuote = [{
   previousClose: 183.94, earningsAnnouncement: null, timestamp: 1700000000,
 }];
 
+// Profile uses stable API field names (marketCap, averageVolume, lastDividend, change)
 const aaplProfile = [{
-  symbol: 'AAPL', companyName: 'Apple Inc.', beta: 1.28, mktCap: 2_870_000_000_000,
-  sector: 'Technology', exchange: 'NASDAQ', exchangeShortName: 'NASDAQ',
+  symbol: 'AAPL', companyName: 'Apple Inc.', beta: 1.28, marketCap: 2_870_000_000_000,
+  sector: 'Technology', exchange: 'NASDAQ',
   description: 'Apple Inc. designs, manufactures, and markets smartphones.',
   isEtf: false, isFund: false, isAdr: false, isActivelyTrading: true,
-  volAvg: 57_000_000, lastDiv: 0.24, range: '124.17-199.62',
-  changes: 1.56, companyName: 'Apple Inc.', currency: 'USD',
-  cik: '0000320193', isin: 'US0378331005', cusip: '037833100',
-  industry: 'Consumer Electronics', website: 'https://www.apple.com',
+  averageVolume: 57_000_000, lastDividend: 0.24, range: '124.17-199.62',
+  change: 1.56, changePercentage: 0.85, currency: 'USD',
+  cik: '0000320193', industry: 'Consumer Electronics', website: 'https://www.apple.com',
   ceo: 'Tim Cook', country: 'US', fullTimeEmployees: '161000',
-  dcf: 155.0, dcfDiff: 30.5, image: null, ipoDate: '1980-12-12', defaultImage: false,
+  image: null, ipoDate: '1980-12-12',
 }];
 
 const aaplRatios = [{ peRatioTTM: 28.5, netProfitMarginTTM: 0.25, returnOnEquityTTM: 1.47, debtEquityRatioTTM: 1.8 }];
@@ -80,12 +80,13 @@ function makeReq(path: string, params: Record<string, string> = {}): NextRequest
 // ── Helper: set up mock responses in FMP call order ───────────────────────────
 // analyze calls: quote, profile, ratiosTTM, historical (in parallel)
 
+// Stable API uses query params: /quote?symbol=AAPL, /profile?symbol=AAPL, etc.
 function mockAaplSuccess() {
   mockFetch.mockImplementation((url: string) => {
-    if (url.includes('/quote/AAPL'))            return ok(aaplQuote);
-    if (url.includes('/profile/AAPL'))          return ok(aaplProfile);
-    if (url.includes('/ratios-ttm/AAPL'))       return ok(aaplRatios);
-    if (url.includes('/historical-price-full')) return ok(aaplHistory);
+    if (url.includes('/quote') && url.includes('AAPL'))             return ok(aaplQuote);
+    if (url.includes('/profile') && url.includes('AAPL'))           return ok(aaplProfile);
+    if (url.includes('/ratios-ttm') && url.includes('AAPL'))        return ok(aaplRatios);
+    if (url.includes('/historical-price-full'))                      return ok(aaplHistory);
     return ok([]);
   });
 }
@@ -164,10 +165,10 @@ describe('GET /api/analyze', () => {
 
   it('works gracefully when profile call fails (null profile)', async () => {
     mockFetch.mockImplementation((url: string) => {
-      if (url.includes('/quote/AAPL'))            return ok(aaplQuote);
-      if (url.includes('/profile/AAPL'))          return fail(500);
-      if (url.includes('/ratios-ttm/AAPL'))       return ok(aaplRatios);
-      if (url.includes('/historical-price-full')) return ok(aaplHistory);
+      if (url.includes('/quote') && url.includes('AAPL'))            return ok(aaplQuote);
+      if (url.includes('/profile') && url.includes('AAPL'))          return fail(500);
+      if (url.includes('/ratios-ttm') && url.includes('AAPL'))       return ok(aaplRatios);
+      if (url.includes('/historical-price-full'))                     return ok(aaplHistory);
       return ok([]);
     });
     const res = await analyzeGET(makeReq('/api/analyze', { ticker: 'AAPL' }));
@@ -186,12 +187,12 @@ describe('GET /api/analyze', () => {
 
   it('scores a penny stock in penny regime', async () => {
     const pennyQuote = [{ ...aaplQuote[0], symbol: 'SNDL', name: 'Sundial Growers', price: 1.20, marketCap: 300_000_000, eps: null, pe: null, dayHigh: 1.45, dayLow: 1.05, avgVolume: 20_000_000, volume: 25_000_000 }];
-    const pennyProfile = [{ ...aaplProfile[0], symbol: 'SNDL', mktCap: 300_000_000, beta: 3.2 }];
+    const pennyProfile = [{ ...aaplProfile[0], symbol: 'SNDL', marketCap: 300_000_000, beta: 3.2 }];
     mockFetch.mockImplementation((url: string) => {
-      if (url.includes('/quote/SNDL'))            return ok(pennyQuote);
-      if (url.includes('/profile/SNDL'))          return ok(pennyProfile);
-      if (url.includes('/ratios-ttm/SNDL'))       return ok([]);
-      if (url.includes('/historical-price-full')) return ok({ historical: [] });
+      if (url.includes('/quote') && url.includes('SNDL'))            return ok(pennyQuote);
+      if (url.includes('/profile') && url.includes('SNDL'))          return ok(pennyProfile);
+      if (url.includes('/ratios-ttm') && url.includes('SNDL'))       return ok([]);
+      if (url.includes('/historical-price-full'))                     return ok({ historical: [] });
       return ok([]);
     });
     const res = await analyzeGET(makeReq('/api/analyze', { ticker: 'SNDL' }));
@@ -208,8 +209,8 @@ describe('GET /api/leaderboard', () => {
 
   it('returns 200 with gainers and actives arrays', async () => {
     mockFetch.mockImplementation((url: string) => {
-      if (url.includes('/stock_market/gainers')) return ok(gainers);
-      if (url.includes('/stock_market/actives')) return ok(actives);
+      if (url.includes('/biggest-gainers')) return ok(gainers);
+      if (url.includes('/most-active')) return ok(actives);
       return ok([]);
     });
     const res = await leaderboardGET();
@@ -222,8 +223,8 @@ describe('GET /api/leaderboard', () => {
 
   it('leaderboard item has required fields', async () => {
     mockFetch.mockImplementation((url: string) => {
-      if (url.includes('/stock_market/gainers')) return ok(gainers);
-      if (url.includes('/stock_market/actives')) return ok(actives);
+      if (url.includes('/biggest-gainers')) return ok(gainers);
+      if (url.includes('/most-active')) return ok(actives);
       return ok([]);
     });
     const res = await leaderboardGET();
@@ -238,8 +239,8 @@ describe('GET /api/leaderboard', () => {
 
   it('miniConfidence is between 10 and 85 for priced items', async () => {
     mockFetch.mockImplementation((url: string) => {
-      if (url.includes('/stock_market/gainers')) return ok(gainers);
-      if (url.includes('/stock_market/actives')) return ok(actives);
+      if (url.includes('/biggest-gainers')) return ok(gainers);
+      if (url.includes('/most-active')) return ok(actives);
       return ok([]);
     });
     const res = await leaderboardGET();

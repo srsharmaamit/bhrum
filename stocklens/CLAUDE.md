@@ -66,6 +66,7 @@ Browser
 | `src/app/api/leaderboard/route.ts` | `/api/leaderboard` handler | Leaderboard changes |
 | `src/app/page.tsx` | Main client page (state, layout) | UI layout, refresh logic |
 | `src/components/ConfidenceGauge.tsx` | Animated SVG radial meter | Gauge visual changes |
+| `src/components/ScoreDecomposition.tsx` | Horizontal segmented bar under gauge — shows each metric's weighted contribution | Decomposition bar changes |
 | `src/components/MetricBreakdown.tsx` | Per-metric score rows | Score display format |
 | `src/components/VerdictPanel.tsx` | Verdict + watch conditions | Verdict UI |
 | `src/components/Leaderboard.tsx` | Top movers + toggle + filter | Leaderboard UI |

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import SearchBar from '@/components/SearchBar';
 import ConfidenceGauge from '@/components/ConfidenceGauge';
+import ScoreDecomposition from '@/components/ScoreDecomposition';
 import MetricBreakdown from '@/components/MetricBreakdown';
 import VerdictPanel from '@/components/VerdictPanel';
 import Leaderboard from '@/components/Leaderboard';
@@ -312,6 +313,9 @@ export default function StockLens() {
                         High score = lower-risk setup. This is <em>not</em> a buy/sell recommendation.
                       </p>
                     </div>
+
+                    {/* Score decomposition bar */}
+                    <ScoreDecomposition metrics={score.metrics} total={score.confidenceFactor} />
 
                     {/* Quick stats */}
                     {quickStats && (
