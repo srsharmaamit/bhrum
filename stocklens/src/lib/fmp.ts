@@ -1,8 +1,8 @@
 // FMP API client — all calls are server-side only.
 // API key is read from process.env.FMP_API_KEY and never sent to the browser.
-// Uses the FMP v3 API (https://financialmodelingprep.com/api/v3) which is
-// available on the free tier (250 calls/day). Symbol goes in the URL path,
-// not as a query param.
+// Uses the FMP stable API (https://financialmodelingprep.com/stable).
+// The stable API returns a single object for single-ticker requests and an
+// array for multi-ticker (batch) requests — both cases are handled here.
 
 import {
   FMPQuote,
@@ -13,7 +13,7 @@ import {
 } from '@/types/stock';
 import { cacheGet, cacheSet } from './cache';
 
-const BASE = 'https://financialmodelingprep.com/api/v3';
+const BASE = 'https://financialmodelingprep.com/stable';
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 // Tracks why the last FMP call failed — read by route handlers for better error messages.
@@ -62,23 +62,18 @@ async function fetchFMP<T>(
     // FMP returns [] on unknown ticker
     if (Array.isArray(data) && data.length === 0) return null;
 
+    // Detect FMP error objects: { "Error Message": "..." } or { "message": "..." }
     if (data && typeof data === 'object' && !Array.isArray(data)) {
       const obj = data as Record<string, unknown>;
-
-      // FMP error formats: { "Error Message": "..." } or { "message": "..." }
-      const errMsg = (obj['Error Message'] ?? obj['message'] ?? '') as string;
-      if (errMsg) {
+      const errMsg = ((obj['Error Message'] ?? obj['message']) as string | undefined) ?? '';
+      if (errMsg && !('historical' in obj)) {
         const lower = errMsg.toLowerCase();
         if (lower.includes('limit') || lower.includes('quota') || lower.includes('exceeded')) {
           _lastFmpError = 'quota';
-        } else if (lower.includes('subscription') || lower.includes('upgrade') || lower.includes('plan')) {
-          // Subscription error — treat as invalid/insufficient key
-          _lastFmpError = 'invalid_key';
         } else {
           _lastFmpError = 'invalid_key';
         }
-        // Only return null if there's no useful data alongside the message
-        if (!('historical' in obj)) return null;
+        return null;
       }
     }
 
@@ -90,9 +85,11 @@ async function fetchFMP<T>(
   }
 }
 
-// ── v3 raw shapes ─────────────────────────────────────────────────────────────
+// ── Stable API raw shapes ─────────────────────────────────────────────────────
+// The stable API may return a single object OR an array depending on whether
+// one or multiple symbols are requested.
 
-interface V3QuoteRaw {
+interface StableQuoteRaw {
   symbol: string;
   name: string;
   price: number;
@@ -117,19 +114,20 @@ interface V3QuoteRaw {
   timestamp: number;
 }
 
-interface V3ProfileRaw {
+interface StableProfileRaw {
   symbol: string;
   price: number;
-  mktCap: number | null;
+  marketCap: number | null;
   beta: number | null;
-  lastDiv: number | null;
+  lastDividend: number | null;
   range: string | null;
-  changes: number | null;
-  volAvg: number | null;
+  change: number | null;
+  changePercentage: number | null;
+  averageVolume: number | null;
   companyName: string;
   currency: string;
   cik: string | null;
-  exchangeShortName: string | null;
+  exchangeFullName: string | null;
   exchange: string;
   industry: string | null;
   website: string | null;
@@ -146,9 +144,10 @@ interface V3ProfileRaw {
   isFund: boolean;
 }
 
-// ── Public getters ────────────────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
-function normalizeQuote(raw: V3QuoteRaw): FMPQuote {
+// Normalise a stable quote object into the internal FMPQuote shape.
+function normalizeQuote(raw: StableQuoteRaw): FMPQuote {
   return {
     symbol: raw.symbol,
     name: raw.name,
@@ -175,22 +174,32 @@ function normalizeQuote(raw: V3QuoteRaw): FMPQuote {
   };
 }
 
+// Unwrap single-object or array response — stable API returns an object for a
+// single symbol and an array for multiple symbols.
+function firstOf<T>(data: T | T[]): T | null {
+  if (Array.isArray(data)) return data[0] ?? null;
+  return data ?? null;
+}
+
+// ── Public getters ────────────────────────────────────────────────────────────
+
 export async function getQuote(ticker: string): Promise<FMPQuote | null> {
-  const t = ticker.toUpperCase();
-  const data = await fetchFMP<V3QuoteRaw[]>(`/quote/${t}`);
-  if (!data?.[0]) return null;
-  return normalizeQuote(data[0]);
+  const data = await fetchFMP<StableQuoteRaw | StableQuoteRaw[]>('/quote', { symbol: ticker.toUpperCase() });
+  if (!data) return null;
+  const raw = firstOf(data);
+  if (!raw?.symbol) return null;
+  return normalizeQuote(raw);
 }
 
 /**
- * Fetches quotes for multiple tickers in ONE FMP call (comma-separated in URL path).
+ * Fetches quotes for multiple tickers in ONE FMP call (comma-separated symbol param).
  * Falls back to individual getQuote calls (capped at 10) if the batch call fails.
  */
 export async function getQuotesBatch(tickers: string[]): Promise<FMPQuote[]> {
   if (tickers.length === 0) return [];
 
   const symbols = tickers.map(t => t.toUpperCase()).join(',');
-  const data = await fetchFMP<V3QuoteRaw[]>(`/quote/${symbols}`);
+  const data = await fetchFMP<StableQuoteRaw | StableQuoteRaw[]>('/quote', { symbol: symbols });
 
   if (data === null) {
     console.warn('[fmp] Batch quote unavailable; falling back to individual getQuote calls');
@@ -199,28 +208,29 @@ export async function getQuotesBatch(tickers: string[]): Promise<FMPQuote[]> {
     return results.filter((q): q is FMPQuote => q !== null);
   }
 
-  return data.map(normalizeQuote);
+  const arr = Array.isArray(data) ? data : [data];
+  return arr.filter(r => r?.symbol).map(normalizeQuote);
 }
 
 export async function getProfile(ticker: string): Promise<FMPProfile | null> {
-  const t = ticker.toUpperCase();
-  const data = await fetchFMP<V3ProfileRaw[]>(`/profile/${t}`);
-  if (!data?.[0]) return null;
-  const raw = data[0];
+  const data = await fetchFMP<StableProfileRaw | StableProfileRaw[]>('/profile', { symbol: ticker.toUpperCase() });
+  if (!data) return null;
+  const raw = firstOf(data);
+  if (!raw?.symbol) return null;
   return {
     symbol: raw.symbol,
     price: raw.price,
     beta: raw.beta,
-    volAvg: raw.volAvg,
-    mktCap: raw.mktCap,
-    lastDiv: raw.lastDiv,
+    volAvg: raw.averageVolume,
+    mktCap: raw.marketCap,
+    lastDiv: raw.lastDividend,
     range: raw.range,
-    changes: raw.changes,
+    changes: raw.change,
     companyName: raw.companyName,
     currency: raw.currency,
     cik: raw.cik,
     exchange: raw.exchange,
-    exchangeShortName: raw.exchangeShortName ?? raw.exchange,
+    exchangeShortName: raw.exchange,
     industry: raw.industry,
     website: raw.website,
     description: raw.description,
@@ -238,19 +248,18 @@ export async function getProfile(ticker: string): Promise<FMPProfile | null> {
 }
 
 export async function getRatiosTTM(ticker: string): Promise<FMPRatiosTTM | null> {
-  const t = ticker.toUpperCase();
-  const data = await fetchFMP<FMPRatiosTTM[]>(`/ratios-ttm/${t}`);
-  return data?.[0] ?? null;
+  const data = await fetchFMP<FMPRatiosTTM | FMPRatiosTTM[]>('/ratios-ttm', { symbol: ticker.toUpperCase() });
+  if (!data) return null;
+  return firstOf(data);
 }
 
 export async function getHistoricalPrices(
   ticker: string,
   days = 200
 ): Promise<FMPHistoricalPrice[]> {
-  const t = ticker.toUpperCase();
   const data = await fetchFMP<{ historical: FMPHistoricalPrice[] } | FMPHistoricalPrice[]>(
-    `/historical-price-full/${t}`,
-    { timeseries: String(days) }
+    '/historical-price-full',
+    { symbol: ticker.toUpperCase(), timeseries: String(days) }
   );
   if (!data) return [];
   if (Array.isArray(data)) return data;
@@ -258,11 +267,11 @@ export async function getHistoricalPrices(
 }
 
 export async function getGainers(): Promise<FMPMoverItem[]> {
-  const data = await fetchFMP<FMPMoverItem[]>('/stock_market/gainers');
+  const data = await fetchFMP<FMPMoverItem[]>('/biggest-gainers');
   return data ?? [];
 }
 
 export async function getActives(): Promise<FMPMoverItem[]> {
-  const data = await fetchFMP<FMPMoverItem[]>('/stock_market/actives');
+  const data = await fetchFMP<FMPMoverItem[]>('/most-active');
   return data ?? [];
 }

@@ -14,23 +14,37 @@ export async function GET() {
   }
 
   try {
-    // v3 API — available on the free tier (250 calls/day)
-    const url = new URL('https://financialmodelingprep.com/api/v3/quote/AAPL');
+    const url = new URL('https://financialmodelingprep.com/stable/quote');
+    url.searchParams.set('symbol', 'AAPL');
     url.searchParams.set('apikey', process.env.FMP_API_KEY);
 
     const res = await fetch(url.toString(), { cache: 'no-store' });
+    const rawText = await res.text();
 
     if (!res.ok) {
       return NextResponse.json({
         ok: false,
         stage: 'fmp_http',
+        httpStatus: res.status,
         message: `FMP API returned HTTP ${res.status} ${res.statusText}`,
+        rawResponse: rawText.slice(0, 500),
         fix: 'Check that your FMP_API_KEY is valid and your account is active at financialmodelingprep.com.',
       });
     }
 
-    const data = await res.json();
+    let data: unknown;
+    try {
+      data = JSON.parse(rawText);
+    } catch {
+      return NextResponse.json({
+        ok: false,
+        stage: 'fmp_parse',
+        message: 'FMP returned non-JSON response.',
+        rawResponse: rawText.slice(0, 500),
+      });
+    }
 
+    // Error object formats
     if (data && typeof data === 'object' && !Array.isArray(data)) {
       const obj = data as Record<string, string>;
       const errMsg = obj['Error Message'] ?? obj['message'] ?? '';
@@ -38,18 +52,33 @@ export async function GET() {
         return NextResponse.json({
           ok: false,
           stage: 'fmp_auth',
-          message: 'FMP rejected the API key.',
+          message: 'FMP rejected the request.',
           fmpMessage: errMsg,
           fix: 'Go to financialmodelingprep.com → Dashboard, copy your API key exactly (no spaces), and update FMP_API_KEY in Vercel → Project Settings → Environment Variables.',
         });
       }
     }
 
+    // Single object response (stable API returns object for single ticker)
+    if (data && typeof data === 'object' && !Array.isArray(data)) {
+      const obj = data as Record<string, unknown>;
+      if (obj.symbol && obj.price) {
+        return NextResponse.json({
+          ok: true,
+          stage: 'fmp_ok',
+          responseFormat: 'single-object',
+          message: `FMP stable API key is valid. AAPL price: $${obj.price}`,
+        });
+      }
+    }
+
+    // Array response
     if (Array.isArray(data) && data.length > 0 && data[0]?.symbol) {
       return NextResponse.json({
         ok: true,
         stage: 'fmp_ok',
-        message: `FMP v3 API key is valid. AAPL price: $${data[0].price}`,
+        responseFormat: 'array',
+        message: `FMP stable API key is valid. AAPL price: $${data[0].price}`,
       });
     }
 
@@ -57,7 +86,7 @@ export async function GET() {
       ok: false,
       stage: 'fmp_unexpected',
       message: 'FMP returned an unexpected response format.',
-      received: JSON.stringify(data).slice(0, 300),
+      received: rawText.slice(0, 500),
     });
 
   } catch (e) {
