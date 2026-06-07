@@ -120,6 +120,7 @@ export interface AnalyzeResponse {
   quote: Partial<FMPQuote>;
   profile: Partial<FMPProfile>;
   scoring: ScoringResult;
+  history: FMPHistoricalPrice[];  // last ~120 closes, newest-first
   error?: string;
 }
 

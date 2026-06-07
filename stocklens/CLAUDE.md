@@ -69,6 +69,9 @@ Browser
 | `src/components/ConfidenceGauge.tsx` | Animated SVG radial meter | Gauge visual changes |
 | `src/components/ScoreDecomposition.tsx` | Horizontal segmented bar under gauge — shows each metric's weighted contribution | Decomposition bar changes |
 | `src/components/WatchlistTable.tsx` | Sortable multi-ticker comparison table; persists list in localStorage; one API call per refresh | Watchlist UI |
+| `src/components/PriceTrendChart.tsx` | Inline-SVG price line with 50/200-day MA reference lines and ±10% neutral band; handles short history | Chart changes |
+| `src/components/RangeBar52w.tsx` | Inline-SVG 52-week range position bar with price marker and % label | Range bar changes |
+| `src/components/RvolGauge.tsx` | Inline-SVG relative-volume bar with threshold zones (quiet/normal/elevated/strong) | RVOL changes |
 | `src/components/MetricBreakdown.tsx` | Per-metric score rows | Score display format |
 | `src/components/VerdictPanel.tsx` | Verdict + watch conditions | Verdict UI |
 | `src/components/Leaderboard.tsx` | Top movers + toggle + filter | Leaderboard UI |

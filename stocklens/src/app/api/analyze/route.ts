@@ -63,6 +63,7 @@ export async function GET(req: NextRequest) {
     quote: q,
     profile: p,
     scoring: scoringResult,
+    history: history.slice(0, 120), // last 120 closes; reuse already-fetched data, no extra FMP call
   };
 
   return NextResponse.json(response, {

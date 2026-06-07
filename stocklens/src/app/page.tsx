@@ -8,6 +8,9 @@ import MetricBreakdown from '@/components/MetricBreakdown';
 import VerdictPanel from '@/components/VerdictPanel';
 import Leaderboard from '@/components/Leaderboard';
 import WatchlistTable from '@/components/WatchlistTable';
+import PriceTrendChart from '@/components/PriceTrendChart';
+import RangeBar52w from '@/components/RangeBar52w';
+import RvolGauge from '@/components/RvolGauge';
 import {
   GaugeSkeleton,
   QuickStatsSkeleton,
@@ -356,6 +359,37 @@ export default function StockLens() {
                 <VerdictSkeleton />
               ) : analysis?.scoring && (
                 <VerdictPanel scoring={analysis.scoring} />
+              )}
+
+              {/* Technical context — price trend, 52-week range, relative volume */}
+              {!loading && analysis && (analysis.history?.length ?? 0) >= 3 && (
+                <div className="bg-navy-800 rounded-2xl p-4 shadow-card animate-fade-in space-y-5">
+                  <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">
+                    Technical Context
+                  </h2>
+                  <div>
+                    <p className="text-xs text-slate-600 mb-2">Price vs Moving Averages</p>
+                    <PriceTrendChart history={analysis.history} quote={analysis.quote} />
+                  </div>
+                  {quote?.yearLow !== undefined && quote.yearHigh !== undefined &&
+                   quote.price !== undefined && quote.yearHigh > 0 && (
+                    <div>
+                      <p className="text-xs text-slate-600 mb-1">52-Week Range</p>
+                      <RangeBar52w
+                        yearLow={quote.yearLow}
+                        yearHigh={quote.yearHigh}
+                        price={quote.price}
+                      />
+                    </div>
+                  )}
+                  {quote?.volume !== undefined && quote.avgVolume !== undefined &&
+                   quote.avgVolume > 0 && (
+                    <div>
+                      <p className="text-xs text-slate-600 mb-1">Relative Volume</p>
+                      <RvolGauge volume={quote.volume} avgVolume={quote.avgVolume} />
+                    </div>
+                  )}
+                </div>
               )}
 
               {/* Metric breakdown */}
