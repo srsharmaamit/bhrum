@@ -90,10 +90,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid ticker symbol(s).' }, { status: 400 });
   }
 
-  // ONE FMP call for all tickers via comma-separated batch endpoint
+  // ONE FMP call for all tickers (with per-ticker fallback for any the batch omits)
   const quotes = await getQuotesBatch(tickers);
+  const returnedSymbols = new Set(quotes.map(q => q.symbol.toUpperCase()));
 
-  const items: WatchlistItem[] = quotes.map(q => {
+  const dataItems: WatchlistItem[] = quotes.map(q => {
     const { score, flag } = computeQuickScore(q);
     const regime = detectRegime(q.price ?? 0, q.marketCap ?? null) as StockRegime;
     return {
@@ -108,6 +109,17 @@ export async function GET(req: NextRequest) {
       volume: q.volume,
     };
   }).sort((a, b) => b.score - a.score);
+
+  // Tickers truly not in FMP: include as placeholder rows at the bottom
+  const noDataItems: WatchlistItem[] = tickers
+    .filter(t => !returnedSymbols.has(t))
+    .map(t => ({
+      symbol: t, name: '—', price: 0, changesPercentage: 0,
+      regime: 'small-cap' as StockRegime, score: 0, flag: 'danger' as MetricFlag,
+      marketCap: null, volume: 0, noData: true,
+    }));
+
+  const items: WatchlistItem[] = [...dataItems, ...noDataItems];
 
   const response: WatchlistResponse = {
     items,

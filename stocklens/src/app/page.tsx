@@ -456,6 +456,15 @@ export default function StockLens() {
           <p className="text-xs text-gray-400">
             Data via Financial Modeling Prep · Refreshes every 5 minutes · Free tier rate-limit aware
           </p>
+          <p className="text-xs text-gray-300">
+            {process.env.NEXT_PUBLIC_BUILD_TIME
+              ? `Built ${new Date(process.env.NEXT_PUBLIC_BUILD_TIME).toLocaleString('en-GB', {
+                  timeZone: 'Europe/London',
+                  day: 'numeric', month: 'short', year: 'numeric',
+                  hour: '2-digit', minute: '2-digit', timeZoneName: 'short',
+                })}`
+              : 'Development build'}
+          </p>
         </div>
       </footer>
     </div>
