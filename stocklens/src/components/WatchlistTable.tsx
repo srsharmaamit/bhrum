@@ -67,7 +67,7 @@ function SortHeader({
   );
 }
 
-function TableRow({ item, onClick }: { item: WatchlistItem; onClick: () => void }) {
+function TableRow({ item, onClick, onRemove }: { item: WatchlistItem; onClick: () => void; onRemove: () => void }) {
   const isPos = item.changesPercentage >= 0;
   return (
     <tr
@@ -99,6 +99,15 @@ function TableRow({ item, onClick }: { item: WatchlistItem; onClick: () => void 
       <td className="py-2.5 pr-3 text-right">
         <span className="text-xs text-gray-500 capitalize">{item.regime}</span>
       </td>
+      <td className="py-2.5 pr-3 text-right w-6">
+        <button
+          onClick={e => { e.stopPropagation(); onRemove(); }}
+          className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition-all text-xs leading-none"
+          title={`Remove ${item.symbol}`}
+        >
+          ×
+        </button>
+      </td>
     </tr>
   );
 }
@@ -117,6 +126,7 @@ function TableSkeleton() {
           <td className="py-2.5 pr-3"><div className="h-3 w-12 bg-gray-200 rounded ml-auto" /></td>
           <td className="py-2.5 pr-3"><div className="h-5 w-8 bg-gray-200 rounded ml-auto" /></td>
           <td className="py-2.5 pr-3"><div className="h-3 w-14 bg-gray-200 rounded ml-auto" /></td>
+          <td className="py-2.5 pr-3 w-6" />
         </tr>
       ))}
     </tbody>
@@ -131,6 +141,8 @@ export default function WatchlistTable({ onSelectTicker }: Props) {
   const [sortKey, setSortKey] = useState<SortKey>('score');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [editing, setEditing] = useState(false);
+  const [addVal, setAddVal] = useState('');
+  const [adding, setAdding] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Read persisted tickers from localStorage on mount
@@ -187,6 +199,29 @@ export default function WatchlistTable({ onSelectTicker }: Props) {
     if (e.key === 'Escape') setEditing(false);
   }
 
+  function addTicker() {
+    const t = addVal.trim().toUpperCase();
+    if (!t || !/^[A-Z0-9.^-]{1,10}$/.test(t)) { setAddVal(''); setAdding(false); return; }
+    const current = appliedTickers || DEFAULT_TICKERS;
+    const existing = current.split(',').map(s => s.trim().toUpperCase());
+    if (existing.includes(t)) { setAddVal(''); setAdding(false); return; }
+    const next = [...existing, t].slice(0, 15).join(',');
+    try { localStorage.setItem(LS_KEY, next); } catch {}
+    setInputVal(next);
+    setAppliedTickers(next);
+    setAddVal('');
+    setAdding(false);
+  }
+
+  function removeTicker(symbol: string) {
+    const current = appliedTickers || DEFAULT_TICKERS;
+    const next = current.split(',').map(s => s.trim().toUpperCase()).filter(s => s !== symbol).join(',');
+    if (!next) return;
+    try { localStorage.setItem(LS_KEY, next); } catch {}
+    setInputVal(next);
+    setAppliedTickers(next);
+  }
+
   function handleSort(key: SortKey) {
     if (key === sortKey) {
       setSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -217,9 +252,30 @@ export default function WatchlistTable({ onSelectTicker }: Props) {
           <p className="text-xs text-gray-400 mt-0.5">Compare tickers side-by-side · click a row to analyze</p>
         </div>
 
-        {/* Ticker input */}
+        {/* Ticker controls */}
         <div className="flex items-center gap-2 min-w-0 w-full sm:w-auto">
-          {editing ? (
+          {adding ? (
+            <>
+              <input
+                autoFocus
+                type="text"
+                value={addVal}
+                onChange={e => setAddVal(e.target.value.toUpperCase())}
+                onKeyDown={e => { if (e.key === 'Enter') addTicker(); if (e.key === 'Escape') { setAdding(false); setAddVal(''); } }}
+                onBlur={() => { if (addVal.trim()) addTicker(); else { setAdding(false); } }}
+                placeholder="e.g. GME"
+                maxLength={10}
+                className="w-28 text-xs bg-gray-50 border border-accent/40 rounded-lg px-3 py-1.5
+                           text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-accent/60 font-mono uppercase"
+              />
+              <button
+                onClick={addTicker}
+                className="px-3 py-1.5 text-xs bg-accent text-white rounded-lg hover:bg-accent/80 transition-colors shrink-0"
+              >
+                Add
+              </button>
+            </>
+          ) : editing ? (
             <>
               <input
                 autoFocus
@@ -240,18 +296,30 @@ export default function WatchlistTable({ onSelectTicker }: Props) {
               </button>
             </>
           ) : (
-            <button
-              onClick={() => setEditing(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-600
-                         bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors border border-transparent
-                         hover:border-gray-200 font-mono"
-              title="Edit watchlist tickers"
-            >
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-              {appliedTickers || DEFAULT_TICKERS}
-            </button>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setAdding(true)}
+                className="flex items-center gap-1 px-2.5 py-1.5 text-xs text-white
+                           bg-accent hover:bg-accent/80 rounded-lg transition-colors shrink-0"
+                title="Add a ticker"
+              >
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                Add
+              </button>
+              <button
+                onClick={() => setEditing(true)}
+                className="flex items-center gap-1 px-2.5 py-1.5 text-xs text-gray-600
+                           bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                title="Edit full list"
+              >
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                Edit
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -267,6 +335,7 @@ export default function WatchlistTable({ onSelectTicker }: Props) {
               <SortHeader label="Chg%" col="changesPercentage" current={sortKey} dir={sortDir} onClick={handleSort} className="text-right pr-3" />
               <SortHeader label="Score" col="score" current={sortKey} dir={sortDir} onClick={handleSort} className="text-right pr-3" />
               <SortHeader label="Regime" col="regime" current={sortKey} dir={sortDir} onClick={handleSort} className="text-right pr-3" />
+              <th className="pr-3 pb-2 w-6" />
             </tr>
           </thead>
           {loading ? (
@@ -274,7 +343,7 @@ export default function WatchlistTable({ onSelectTicker }: Props) {
           ) : sortedItems.length === 0 ? (
             <tbody>
               <tr>
-                <td colSpan={6} className="py-8 text-center text-sm text-gray-400">
+                <td colSpan={7} className="py-8 text-center text-sm text-gray-400">
                   {appliedTickers ? 'No data returned — check your ticker symbols.' : 'Loading…'}
                 </td>
               </tr>
@@ -286,6 +355,7 @@ export default function WatchlistTable({ onSelectTicker }: Props) {
                   key={item.symbol}
                   item={item}
                   onClick={() => onSelectTicker(item.symbol)}
+                  onRemove={() => removeTicker(item.symbol)}
                 />
               ))}
             </tbody>
