@@ -69,6 +69,33 @@ function SortHeader({
 
 function TableRow({ item, onClick, onRemove }: { item: WatchlistItem; onClick: () => void; onRemove: () => void }) {
   const isPos = item.changesPercentage >= 0;
+
+  if (item.noData) {
+    return (
+      <tr className="group border-t border-gray-100 opacity-60">
+        <td className="py-2.5 pl-3 pr-2 w-6">
+          <span className="inline-block w-2 h-2 rounded-full bg-gray-300" />
+        </td>
+        <td className="py-2.5 pr-3">
+          <div className="text-sm font-bold text-gray-500 font-mono leading-tight">{item.symbol}</div>
+          <div className="text-xs text-gray-400 leading-tight">No data from provider</div>
+        </td>
+        <td colSpan={4} className="py-2.5 pr-3 text-right text-xs text-gray-400 italic">
+          Not found in FMP — may be delisted or OTC only
+        </td>
+        <td className="py-2.5 pr-3 text-right w-6">
+          <button
+            onClick={e => { e.stopPropagation(); onRemove(); }}
+            className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition-all text-xs leading-none"
+            title={`Remove ${item.symbol}`}
+          >
+            ×
+          </button>
+        </td>
+      </tr>
+    );
+  }
+
   return (
     <tr
       onClick={onClick}

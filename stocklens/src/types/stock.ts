@@ -154,6 +154,7 @@ export interface WatchlistItem {
   flag: MetricFlag;
   marketCap: number | null;
   volume: number;
+  noData?: boolean;    // true when FMP returned no quote for this ticker
 }
 
 export interface WatchlistResponse {

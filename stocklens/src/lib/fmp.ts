@@ -198,18 +198,27 @@ export async function getQuote(ticker: string): Promise<FMPQuote | null> {
 export async function getQuotesBatch(tickers: string[]): Promise<FMPQuote[]> {
   if (tickers.length === 0) return [];
 
-  const symbols = tickers.map(t => t.toUpperCase()).join(',');
-  const data = await fetchFMP<StableQuoteRaw | StableQuoteRaw[]>('/quote', { symbol: symbols });
+  const upper = tickers.map(t => t.toUpperCase());
+  const data = await fetchFMP<StableQuoteRaw | StableQuoteRaw[]>('/quote', { symbol: upper.join(',') });
 
   if (data === null) {
     console.warn('[fmp] Batch quote unavailable; falling back to individual getQuote calls');
-    const capped = tickers.slice(0, 10);
-    const results = await Promise.all(capped.map(t => getQuote(t)));
+    const results = await Promise.all(upper.slice(0, 10).map(t => getQuote(t)));
     return results.filter((q): q is FMPQuote => q !== null);
   }
 
   const arr = Array.isArray(data) ? data : [data];
-  return arr.filter(r => r?.symbol).map(normalizeQuote);
+  const found = arr.filter(r => r?.symbol).map(normalizeQuote);
+
+  // Some tickers may be silently omitted by the batch endpoint — fetch them individually
+  const foundSet = new Set(found.map(q => q.symbol.toUpperCase()));
+  const missing = upper.filter(t => !foundSet.has(t));
+  if (missing.length > 0) {
+    const extras = await Promise.all(missing.map(t => getQuote(t)));
+    return [...found, ...extras.filter((q): q is FMPQuote => q !== null)];
+  }
+
+  return found;
 }
 
 export async function getProfile(ticker: string): Promise<FMPProfile | null> {
